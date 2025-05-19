@@ -21,6 +21,7 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/editor" element={<CodeEditor />} />
+                <Route path="/editor/:id" element={<CodeEditor />} />
               </Routes>
             </main>
             <Footer />

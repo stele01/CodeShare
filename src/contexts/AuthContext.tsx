@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
 interface User {
-  id: string;
+  _id: string;
   name: string;
   email: string;
+  token?: string;
 }
 
 interface AuthContextType {
@@ -23,50 +24,76 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   // Check for saved auth state on mount
   useEffect(() => {
+    const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    if (savedUser) {
+    
+    if (token && savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (error) {
         console.error('Failed to parse saved user data');
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
       }
     }
     setIsLoading(false);
   }, []);
 
-  // Mock login functionality - would normally call an API
+  // Real login functionality that calls the API
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
       
-      // For demo purposes, accept any non-empty email/password
-      if (email && password) {
-        const newUser: User = {
-          id: 'user-' + Math.random().toString(36).substr(2, 9),
-          name: email.split('@')[0], // Use part of email as name
-          email
-        };
-        
-        setUser(newUser);
-        localStorage.setItem('user', JSON.stringify(newUser));
-        return true;
+      if (!response.ok) {
+        console.error('Login failed:', response.statusText);
+        return false;
       }
-      return false;
+      
+      const userData = await response.json();
+      
+      // Save token separately
+      localStorage.setItem('token', userData.token);
+      
+      // Save user data without token
+      const userToSave = {
+        _id: userData._id,
+        name: userData.name,
+        email: userData.email
+      };
+      
+      setUser(userToSave);
+      localStorage.setItem('user', JSON.stringify(userToSave));
+      
+      return true;
     } catch (error) {
       console.error('Login failed:', error);
       return false;
     }
   };
 
-  // Mock register functionality
+  // Real register functionality that calls the API
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, email, password })
+      });
       
-      // For demo purposes, always succeed but don't auto-login
+      if (!response.ok) {
+        console.error('Registration failed:', response.statusText);
+        return false;
+      }
+      
+      // Registration successful but don't auto-login
       return true;
     } catch (error) {
       console.error('Registration failed:', error);
@@ -77,6 +104,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
   };
 
   return (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useModal } from '../../contexts/ModalContext';
 import Editor from 'react-simple-code-editor';
@@ -71,6 +71,7 @@ const editorStyles = `
 `;
 
 const CodeEditor = () => {
+  const { id: workspaceId } = useParams();
   const { isAuthenticated, isLoading } = useAuth();
   const { openModal } = useModal();
   const navigate = useNavigate();
@@ -79,6 +80,50 @@ const CodeEditor = () => {
   const [access, setAccess] = useState('Public');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [title, setTitle] = useState('Untitled Project');
+  const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Fetch workspace data if ID is provided
+  useEffect(() => {
+    const fetchWorkspace = async () => {
+      if (!workspaceId) return;
+      
+      setIsLoadingWorkspace(true);
+      try {
+        const response = await fetch(`/api/workspaces/${workspaceId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch workspace');
+        }
+        
+        const data = await response.json();
+        setCode(data.code);
+        setLanguage(data.language);
+        setAccess(data.isPublic ? 'Public' : 'Private');
+        setTitle(data.title);
+        setIsEditMode(true);
+      } catch (error) {
+        console.error('Error loading workspace:', error);
+        setSaveMessage('Failed to load workspace. Redirecting to new editor...');
+        
+        // Redirect to the main editor after 3 seconds if there's an error
+        setTimeout(() => {
+          navigate('/editor');
+        }, 3000);
+      } finally {
+        setIsLoadingWorkspace(false);
+      }
+    };
+    
+    if (workspaceId) {
+      fetchWorkspace();
+    }
+  }, [workspaceId, navigate]);
   
   // Inject custom CSS styles
   useEffect(() => {
@@ -130,11 +175,13 @@ const CodeEditor = () => {
     // Don't reset code when changing language
   };
   
-  // Set initial starter code - only run once on mount
+  // Set initial starter code - only run once on mount and when not in edit mode
   useEffect(() => {
-    setCode(getStarterCode());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Intentionally only run once on mount
+    if (!isEditMode) {
+      setCode(getStarterCode());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode]);
 
   // Highlight.js highlighting function
   const highlightCode = (code: string) => {
@@ -157,29 +204,44 @@ const CodeEditor = () => {
       setIsSaving(true);
       setSaveMessage('');
       
-      const response = await fetch('/api/workspaces', {
-        method: 'POST',
+      console.log('Sending save request to /api/workspaces');
+      
+      // If in edit mode, update the existing workspace
+      const url = isEditMode ? `/api/workspaces/${workspaceId}` : '/api/workspaces';
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          title: 'Untitled Project', // You could add a title input field
+          title: title,
           code: code,
           language: language,
           isPublic: access === 'Public'
         })
       });
       
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to save project');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error response:', errorData);
+        throw new Error(errorData.message || 'Failed to save project');
       }
       
-      await response.json();
+      const data = await response.json();
+      console.log('Save successful:', data);
+      
+      // If creating new workspace, update URL to enable edit mode
+      if (!isEditMode) {
+        navigate(`/editor/${data._id}`, { replace: true });
+        setIsEditMode(true);
+      }
       
       setSaveMessage('Project saved successfully!');
-      
-      // Optional: Navigate to the saved project page
-      // navigate(`/project/${data._id}`);
       
       // After 3 seconds, clear the save message
       setTimeout(() => {
@@ -193,7 +255,12 @@ const CodeEditor = () => {
     }
   };
   
-  if (isLoading) {
+  // Handle title change
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+  };
+  
+  if (isLoading || isLoadingWorkspace) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
@@ -218,7 +285,15 @@ const CodeEditor = () => {
         <div className="bg-white bg-opacity-10 backdrop-blur-sm shadow-lg rounded-lg overflow-hidden">
           <div className="bg-gray-800 px-4 py-3">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-white text-lg font-medium">CodeShare Editor</h1>
+              <div className="flex items-center">
+                <input
+                  type="text"
+                  className="text-white text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 w-48 sm:w-64"
+                  value={title}
+                  onChange={handleTitleChange}
+                  placeholder="Project Title"
+                />
+              </div>
               <div className="flex space-x-2 items-center">
                 {saveMessage && (
                   <span className={`text-sm mr-2 ${saveMessage.includes('Failed') ? 'text-red-400' : 'text-green-400'}`}>
@@ -231,7 +306,7 @@ const CodeEditor = () => {
                     onClick={handleSave}
                     disabled={isSaving}
                   >
-                    {isSaving ? 'Saving...' : 'Save'}
+                    {isSaving ? 'Saving...' : isEditMode ? 'Update' : 'Save'}
                   </button>
                 ) : (
                   <div className="flex items-center">

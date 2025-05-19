@@ -2,10 +2,23 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
+interface Workspace {
+  _id: string;
+  title: string;
+  language: string;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const ProfilePage = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const [animate, setAnimate] = useState(false);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   
   // Redirect if not authenticated
   useEffect(() => {
@@ -13,6 +26,40 @@ const ProfilePage = () => {
       navigate('/');
     }
   }, [isAuthenticated, isLoading, navigate]);
+
+  // Fetch user workspaces
+  useEffect(() => {
+    const fetchWorkspaces = async () => {
+      if (!user) return;
+      
+      setIsLoadingWorkspaces(true);
+      setError(null);
+      
+      try {
+        const response = await fetch('/api/workspaces', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch workspaces');
+        }
+        
+        const data = await response.json();
+        setWorkspaces(data);
+      } catch (err) {
+        console.error('Error fetching workspaces:', err);
+        setError('Failed to load your projects. Please try again.');
+      } finally {
+        setIsLoadingWorkspaces(false);
+      }
+    };
+    
+    if (isAuthenticated && user) {
+      fetchWorkspaces();
+    }
+  }, [isAuthenticated, user]);
 
   // Start animations after component mounts
   useEffect(() => {
@@ -26,6 +73,41 @@ const ProfilePage = () => {
   // Function to handle new project creation
   const handleCreateNewProject = () => {
     navigate('/editor');
+  };
+  
+  // Function to open a project
+  const handleOpenProject = (id: string) => {
+    navigate(`/editor/${id}`);
+  };
+
+  // Function to handle deletion
+  const handleDeleteWorkspace = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      return;
+    }
+    
+    setDeletingId(id);
+    
+    try {
+      const response = await fetch(`/api/workspaces/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete project');
+      }
+      
+      // Remove the deleted workspace from state
+      setWorkspaces(workspaces.filter(workspace => workspace._id !== id));
+    } catch (err) {
+      console.error('Error deleting workspace:', err);
+      setError('Failed to delete project. Please try again.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (isLoading) {
@@ -70,11 +152,13 @@ const ProfilePage = () => {
               </div>
               <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Account ID</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user.id}</dd>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user._id}</dd>
               </div>
               <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Recent Activity</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">No recent activity</dd>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  {workspaces.length > 0 ? `Last saved project: ${new Date(workspaces[0].updatedAt).toLocaleString()}` : 'No recent activity'}
+                </dd>
               </div>
             </dl>
           </div>
@@ -89,19 +173,102 @@ const ProfilePage = () => {
             animationFillMode: 'forwards'
           }}
         >
-          <div className="px-4 py-5 sm:px-6 bg-gray-800 text-white">
-            <h3 className="text-lg leading-6 font-medium">Projects</h3>
-            <p className="mt-1 max-w-2xl text-sm">Your CodeShare projects</p>
-          </div>
-          <div className="p-6 text-center text-gray-500">
-            <p className="mb-4">You don't have any projects yet.</p>
+          <div className="px-4 py-5 sm:px-6 bg-gray-800 text-white flex justify-between items-center">
+            <div>
+              <h3 className="text-lg leading-6 font-medium">Projects</h3>
+              <p className="mt-1 max-w-2xl text-sm">Your CodeShare projects</p>
+            </div>
             <button 
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+              className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 text-sm"
               onClick={handleCreateNewProject}
             >
-              Create New Project
+              New Project
             </button>
           </div>
+          
+          {isLoadingWorkspaces ? (
+            <div className="p-6 text-center">
+              <div className="w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="mt-2 text-gray-500">Loading your projects...</p>
+            </div>
+          ) : error ? (
+            <div className="p-6 text-center">
+              <p className="text-red-500">{error}</p>
+              <button 
+                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          ) : workspaces.length > 0 ? (
+            <div className="overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Title
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Language
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Visibility
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {workspaces.map((workspace) => (
+                    <tr key={workspace._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {workspace.title}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {workspace.language}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {workspace.isPublic ? 'Public' : 'Private'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(workspace.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button 
+                          onClick={() => handleOpenProject(workspace._id)}
+                          className="text-blue-600 hover:text-blue-900 mr-4"
+                        >
+                          Open
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteWorkspace(workspace._id)}
+                          disabled={deletingId === workspace._id}
+                          className={`text-red-600 hover:text-red-900 ${deletingId === workspace._id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {deletingId === workspace._id ? 'Deleting...' : 'Delete'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-6 text-center text-gray-500">
+              <p className="mb-4">You don't have any projects yet.</p>
+              <button 
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+                onClick={handleCreateNewProject}
+              >
+                Create New Project
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
