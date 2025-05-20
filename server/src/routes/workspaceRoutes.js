@@ -8,13 +8,13 @@ const {
   deleteWorkspace, 
   getPublicWorkspaces 
 } = require('../controllers/workspaceController');
-const { protect } = require('../middleware/auth');
+const { protect, optionalAuth } = require('../middleware/auth');
 
 // Public routes
 router.get('/public', getPublicWorkspaces);
 
 // Semi-protected route (handles public/private access internally)
-router.get('/:id', getWorkspaceById);
+router.get('/:id', optionalAuth, getWorkspaceById);
 
 // Protected routes
 router.post('/', protect, createWorkspace);

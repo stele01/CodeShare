@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useModal } from '../../contexts/ModalContext';
 
 interface Workspace {
   _id: string;
@@ -13,6 +14,7 @@ interface Workspace {
 
 const ProfilePage = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { openModal } = useModal();
   const navigate = useNavigate();
   const [animate, setAnimate] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -72,7 +74,7 @@ const ProfilePage = () => {
 
   // Function to handle new project creation
   const handleCreateNewProject = () => {
-    navigate('/editor');
+    openModal('createProject');
   };
   
   // Function to open a project

@@ -49,14 +49,40 @@ const getWorkspaceById = async (req, res) => {
       return res.status(404).json({ message: 'Workspace not found' });
     }
 
+    // Debug logging
+    console.log(`Workspace access check: 
+      - Workspace ID: ${workspace._id}
+      - Is Public: ${workspace.isPublic}
+      - Owner ID: ${workspace.user._id}
+      - User authenticated: ${req.user ? 'Yes' : 'No'}
+      - Request User ID: ${req.user ? req.user._id : 'None'}
+    `);
+
     // Check if workspace is private and user is not the owner
-    if (!workspace.isPublic && (!req.user || workspace.user._id.toString() !== req.user._id.toString())) {
-      return res.status(403).json({ message: 'Not authorized to access this workspace' });
+    if (!workspace.isPublic) {
+      if (!req.user) {
+        return res.status(403).json({ 
+          message: 'This workspace is private. Please log in to access it.',
+          isPrivate: true 
+        });
+      }
+      
+      const workspaceOwnerId = workspace.user._id.toString();
+      const requestUserId = req.user._id.toString();
+      
+      console.log(`Comparing IDs: "${workspaceOwnerId}" vs "${requestUserId}"`);
+      
+      if (workspaceOwnerId !== requestUserId) {
+        return res.status(403).json({ 
+          message: 'This workspace is private. Only the owner can access it.',
+          isPrivate: true 
+        });
+      }
     }
 
     res.json(workspace);
   } catch (error) {
-    console.error(error);
+    console.error(`Error getting workspace ${req.params.id}:`, error);
     res.status(500).json({ message: 'Server Error' });
   }
 };

@@ -120,25 +120,60 @@ const CodeEditor = () => {
       
       setIsLoadingWorkspace(true);
       try {
+        // Get the current token
+        const token = localStorage.getItem('token');
+        
+        console.log('Fetching workspace with ID:', workspaceId);
+        console.log('Token available:', token ? 'Yes' : 'No');
+        
         const response = await fetch(`/api/workspaces/${workspaceId}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          // Skip cache to ensure fresh request
+          cache: 'no-store'
         });
         
-        if (!response.ok) {
+        console.log('Fetch response status:', response.status);
+        
+        // Handle specific error cases
+        if (response.status === 403) {
+          // Try to get error details
+          const errorData = await response.json().catch(() => ({}));
+          console.log('403 Error details:', errorData);
+          
+          if (errorData.isPrivate) {
+            if (!isAuthenticated) {
+              // User is not authenticated but trying to access a private workspace
+              setSaveMessage('This workspace is private. Please log in to access it.');
+              setTimeout(() => {
+                openModal('login');
+                navigate('/editor');
+              }, 2000);
+            } else {
+              // User is authenticated but doesn't own this private workspace
+              throw new Error('This workspace is private. Only the owner can access it.');
+            }
+          } else {
+            throw new Error('You do not have permission to access this workspace.');
+          }
+          
+          return; // Exit early
+        } else if (!response.ok) {
           throw new Error('Failed to fetch workspace');
         }
         
         const data = await response.json();
+        console.log('Workspace data loaded successfully');
+        
         setCode(data.code);
         setLanguage(data.language);
         setAccess(data.isPublic ? 'Public' : 'Private');
         setTitle(data.title);
         setIsEditMode(true);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error loading workspace:', error);
-        setSaveMessage('Failed to load workspace. Redirecting to new editor...');
+        setSaveMessage(error instanceof Error ? error.message : 'Failed to load workspace. Redirecting to new editor...');
         
         // Redirect to the main editor after 3 seconds if there's an error
         setTimeout(() => {
@@ -152,7 +187,7 @@ const CodeEditor = () => {
     if (workspaceId) {
       fetchWorkspace();
     }
-  }, [workspaceId, navigate]);
+  }, [workspaceId, navigate, isAuthenticated, openModal]);
   
   // Inject custom CSS styles
   useEffect(() => {

@@ -23,12 +23,29 @@ const CreateProject = () => {
       setError('');
       
       if (isAuthenticated) {
+        // Get the current token
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          console.error('No token found but user is authenticated');
+          if (!isPublic) {
+            throw new Error('You must be logged in to create private projects');
+          }
+        }
+
+        console.log('Creating workspace with settings:', {
+          title: projectName,
+          language,
+          isPublic,
+          authenticated: !!token
+        });
+        
         // Send API request to create project in the database
         const response = await fetch('/api/workspaces', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': token ? `Bearer ${token}` : ''
           },
           body: JSON.stringify({
             title: projectName,
@@ -38,16 +55,32 @@ const CreateProject = () => {
           })
         });
         
+        console.log('Create workspace response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error('Failed to create project');
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error creating workspace:', errorData);
+          throw new Error(errorData.message || 'Failed to create project');
         }
         
         const data = await response.json();
+        console.log('Workspace created successfully:', data._id);
+        
         setHasActiveWorkspace(true);
+        
+        // Clear any potential old error messages
+        setError('');
+        
+        // Close the modal
         closeModal();
-        navigate(`/editor/${data._id}`);
+        
+        // Small delay to ensure token processing
+        setTimeout(() => {
+          navigate(`/editor/${data._id}`);
+        }, 200);
       } else {
         // For non-authenticated users, just redirect to editor with parameters
+        // Non-authenticated users can only create public workspaces
         setHasActiveWorkspace(true);
         closeModal();
         navigate('/editor', { 
@@ -58,9 +91,9 @@ const CreateProject = () => {
           } 
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating project:', error);
-      setError('Failed to create project. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to create project. Please try again.');
     } finally {
       setIsLoading(false);
     }
