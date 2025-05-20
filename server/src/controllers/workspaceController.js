@@ -105,6 +105,10 @@ const updateWorkspace = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this workspace' });
     }
 
+    // Check if privacy changed from public to private
+    const wasPublic = workspace.isPublic;
+    const isNowPrivate = isPublic !== undefined && !isPublic && wasPublic;
+    
     // Update fields
     workspace.title = title || workspace.title;
     workspace.code = code || workspace.code;
@@ -112,6 +116,22 @@ const updateWorkspace = async (req, res) => {
     workspace.isPublic = isPublic !== undefined ? isPublic : workspace.isPublic;
     
     const updatedWorkspace = await workspace.save();
+
+    // If we've changed from public to private, remove any share links
+    if (isNowPrivate) {
+      try {
+        // Import the ShareLink model
+        const ShareLink = require('../models/ShareLink');
+        
+        // Find and delete share links for this workspace
+        const deletedLinks = await ShareLink.deleteMany({ workspaceId: workspace._id });
+        
+        console.log(`Deleted ${deletedLinks.deletedCount} share links for workspace ${workspace._id} due to privacy change`);
+      } catch (error) {
+        console.error('Error deleting share links after privacy change:', error);
+        // Don't fail the request if share link deletion fails
+      }
+    }
 
     res.json(updatedWorkspace);
   } catch (error) {

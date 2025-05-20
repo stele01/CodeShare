@@ -131,14 +131,6 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                {hasActiveWorkspace && (
-                  <Link 
-                    to="/editor"
-                    className="text-gray-300 hover:text-white bg-gray-700 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    My Editor
-                  </Link>
-                )}
                 <Link 
                   to="/profile"
                   className="text-gray-300 hover:text-white bg-gray-800 px-3 py-2 rounded-md text-sm font-medium"
@@ -229,14 +221,6 @@ const Navbar = () => {
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-700">
             {isAuthenticated ? (
               <>
-                {hasActiveWorkspace && (
-                  <Link 
-                    to="/editor"
-                    className="text-gray-300 hover:text-white bg-gray-700 px-3 py-2 rounded-md text-base font-medium w-full text-left"
-                  >
-                    My Editor
-                  </Link>
-                )}
                 <Link 
                   to="/profile"
                   className="text-gray-300 hover:text-white bg-gray-800 px-3 py-2 rounded-md text-base font-medium w-full text-left"

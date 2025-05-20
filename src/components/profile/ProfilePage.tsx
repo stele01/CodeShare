@@ -14,7 +14,7 @@ interface Workspace {
 
 const ProfilePage = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const { openModal } = useModal();
+  const { openModal, showDeleteConfirmation } = useModal();
   const navigate = useNavigate();
   const [animate, setAnimate] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -84,32 +84,42 @@ const ProfilePage = () => {
 
   // Function to handle deletion
   const handleDeleteWorkspace = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-      return;
-    }
+    // Find the workspace to get its title for the confirmation message
+    const workspaceToDelete = workspaces.find(ws => ws._id === id);
+    if (!workspaceToDelete) return;
     
-    setDeletingId(id);
-    
-    try {
-      const response = await fetch(`/api/workspaces/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+    // Use custom confirmation dialog instead of window.confirm
+    showDeleteConfirmation({
+      title: 'Delete Project?',
+      message: `Are you sure you want to delete "${workspaceToDelete.title}"? This action cannot be undone.`,
+      onConfirm: async () => {
+        setDeletingId(id);
+        
+        try {
+          const response = await fetch(`/api/workspaces/${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to delete project');
+          }
+          
+          // Remove the deleted workspace from state
+          setWorkspaces(workspaces.filter(workspace => workspace._id !== id));
+        } catch (err) {
+          console.error('Error deleting workspace:', err);
+          setError('Failed to delete project. Please try again.');
+        } finally {
+          setDeletingId(null);
         }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete project');
+      },
+      onCancel: () => {
+        // Do nothing on cancel
       }
-      
-      // Remove the deleted workspace from state
-      setWorkspaces(workspaces.filter(workspace => workspace._id !== id));
-    } catch (err) {
-      console.error('Error deleting workspace:', err);
-      setError('Failed to delete project. Please try again.');
-    } finally {
-      setDeletingId(null);
-    }
+    });
   };
 
   if (isLoading) {

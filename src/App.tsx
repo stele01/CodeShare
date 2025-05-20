@@ -5,10 +5,12 @@ import Footer from './components/layout/Footer';
 import HomePage from './components/home/HomePage';
 import ProfilePage from './components/profile/ProfilePage';
 import CodeEditor from './components/editor/CodeEditor';
+import ShareRedirect from './components/editor/ShareRedirect';
 import { ModalProvider } from './contexts/ModalContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import AuthModal from './components/auth/AuthModal';
+import ConfirmationModal from './components/modals/ConfirmationModal';
 
 function App() {
   return (
@@ -24,10 +26,12 @@ function App() {
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/editor" element={<CodeEditor />} />
                   <Route path="/editor/:id" element={<CodeEditor />} />
+                  <Route path="/s/:shortCode" element={<ShareRedirect />} />
                 </Routes>
               </main>
               <Footer />
               <AuthModal />
+              <ConfirmationModal />
             </div>
           </Router>
         </ModalProvider>

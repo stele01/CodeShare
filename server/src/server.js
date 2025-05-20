@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 // Route files
 const authRoutes = require('./routes/authRoutes');
 const workspaceRoutes = require('./routes/workspaceRoutes');
+const shareLinkRoutes = require('./routes/shareLinkRoutes');
 
 // Connect to database
 connectDB();
@@ -39,6 +40,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
+app.use('/api/share', shareLinkRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

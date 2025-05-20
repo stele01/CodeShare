@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useModal } from '../../contexts/ModalContext';
@@ -71,11 +71,18 @@ const editorStyles = `
   }
 `;
 
-const CodeEditor = () => {
-  const { id: workspaceId } = useParams();
+// Add these props to the component definition
+interface CodeEditorProps {
+  sharedWorkspaceId?: string;
+  isSharedView?: boolean;
+}
+
+const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps) => {
+  const { id: paramWorkspaceId } = useParams();
+  const workspaceId = sharedWorkspaceId || paramWorkspaceId;
   const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
-  const { openModal } = useModal();
+  const { openModal, showConfirmation } = useModal();
   const { setHasActiveWorkspace } = useWorkspace();
   const navigate = useNavigate();
   const [code, setCode] = useState('// Start coding here...\n\n');
@@ -86,6 +93,124 @@ const CodeEditor = () => {
   const [title, setTitle] = useState('Untitled Project');
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isShareLoading, setIsShareLoading] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const shareInputRef = useRef<HTMLInputElement>(null);
+  const [lastSaved, setLastSaved] = useState<number>(Date.now());
+  const codeRef = useRef(code);
+  
+  // Keep the ref in sync with the state
+  useEffect(() => {
+    codeRef.current = code;
+  }, [code]);
+  
+  // Try to load code from localStorage on mount if we're not loading an existing workspace
+  useEffect(() => {
+    if (!workspaceId && !isSharedView && !isLoadingWorkspace) {
+      const savedCode = localStorage.getItem('unsavedCode');
+      const savedLanguage = localStorage.getItem('unsavedLanguage');
+      const savedTitle = localStorage.getItem('unsavedTitle');
+      
+      if (savedCode) {
+        setCode(savedCode);
+      }
+      if (savedLanguage) {
+        setLanguage(savedLanguage);
+      }
+      if (savedTitle) {
+        setTitle(savedTitle);
+      }
+    }
+  }, [workspaceId, isSharedView, isLoadingWorkspace]);
+  
+  // Memoize the save function to use in the effect
+  const handleAutoSave = useCallback(async () => {
+    if (!isAuthenticated) {
+      return;
+    }
+    
+    try {
+      console.log('Auto-saving workspace...');
+      
+      // If in edit mode, update the existing workspace
+      const url = isEditMode ? `/api/workspaces/${workspaceId}` : '/api/workspaces';
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          title: title,
+          code: codeRef.current,
+          language: language,
+          isPublic: access === 'Public'
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error auto-saving:', errorData);
+        return;
+      }
+      
+      const data = await response.json();
+      
+      // If creating new workspace, update URL to enable edit mode
+      if (!isEditMode) {
+        setHasActiveWorkspace(true);
+        
+        // If in shared view, stay there, otherwise navigate to normal editor URL
+        if (!isSharedView) {
+          navigate(`/editor/${data._id}`, { replace: true });
+        }
+        setIsEditMode(true);
+        
+        // Clear localStorage saved code after successful save of a new workspace
+        localStorage.removeItem('unsavedCode');
+        localStorage.removeItem('unsavedLanguage');
+        localStorage.removeItem('unsavedTitle');
+      }
+      
+      console.log('Auto-save successful');
+      setLastSaved(Date.now());
+    } catch (error) {
+      console.error('Error auto-saving project:', error);
+    }
+  }, [isAuthenticated, isEditMode, workspaceId, title, language, access, isSharedView, navigate, setHasActiveWorkspace]);
+  
+  // Setup autosave to localStorage (for all users) and to server (for authenticated users)
+  useEffect(() => {
+    if (isSharedView) return; // Don't autosave in shared view
+    
+    // Save to localStorage every 2 seconds when code changes
+    const localSaveInterval = setInterval(() => {
+      const currentCode = codeRef.current;
+      if (currentCode) {
+        localStorage.setItem('unsavedCode', currentCode);
+        localStorage.setItem('unsavedLanguage', language);
+        localStorage.setItem('unsavedTitle', title);
+      }
+    }, 2000);
+    
+    // Server autosave for authenticated users every 30 seconds
+    const serverSaveInterval = setInterval(() => {
+      if (isAuthenticated && workspaceId && (Date.now() - lastSaved > 30000)) {
+        // Only save if code has changed since last save
+        if (codeRef.current && !isSaving) {
+          handleAutoSave();
+        }
+      }
+    }, 30000);
+    
+    return () => {
+      clearInterval(localSaveInterval);
+      clearInterval(serverSaveInterval);
+    };
+  }, [isAuthenticated, workspaceId, language, title, isSharedView, isSaving, lastSaved, handleAutoSave]);
   
   // Handle state passed from the CreateProject component
   useEffect(() => {
@@ -171,14 +296,21 @@ const CodeEditor = () => {
         setAccess(data.isPublic ? 'Public' : 'Private');
         setTitle(data.title);
         setIsEditMode(true);
+        
+        // Clear any unsaved data in localStorage since we've loaded a workspace
+        localStorage.removeItem('unsavedCode');
+        localStorage.removeItem('unsavedLanguage');
+        localStorage.removeItem('unsavedTitle');
       } catch (error: unknown) {
         console.error('Error loading workspace:', error);
         setSaveMessage(error instanceof Error ? error.message : 'Failed to load workspace. Redirecting to new editor...');
         
-        // Redirect to the main editor after 3 seconds if there's an error
-        setTimeout(() => {
-          navigate('/editor');
-        }, 3000);
+        // Only redirect if not in shared view
+        if (!isSharedView) {
+          setTimeout(() => {
+            navigate('/editor');
+          }, 3000);
+        }
       } finally {
         setIsLoadingWorkspace(false);
       }
@@ -187,7 +319,7 @@ const CodeEditor = () => {
     if (workspaceId) {
       fetchWorkspace();
     }
-  }, [workspaceId, navigate, isAuthenticated, openModal]);
+  }, [workspaceId, navigate, isAuthenticated, openModal, isSharedView]);
   
   // Inject custom CSS styles
   useEffect(() => {
@@ -302,10 +434,20 @@ const CodeEditor = () => {
       // If creating new workspace, update URL to enable edit mode
       if (!isEditMode) {
         setHasActiveWorkspace(true);
-        navigate(`/editor/${data._id}`, { replace: true });
+        
+        // If in shared view, stay there, otherwise navigate to normal editor URL
+        if (!isSharedView) {
+          navigate(`/editor/${data._id}`, { replace: true });
+        }
         setIsEditMode(true);
+        
+        // Clear localStorage saved code after successful save of a new workspace
+        localStorage.removeItem('unsavedCode');
+        localStorage.removeItem('unsavedLanguage');
+        localStorage.removeItem('unsavedTitle');
       }
       
+      setLastSaved(Date.now());
       setSaveMessage('Project saved successfully!');
       
       // After 3 seconds, clear the save message
@@ -323,6 +465,167 @@ const CodeEditor = () => {
   // Handle title change
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
+  };
+
+  // Handle sharing functionality
+  const handleShare = async () => {
+    // If already in shared view, just show the current URL
+    if (isSharedView) {
+      const currentUrl = window.location.href;
+      setShareUrl(currentUrl);
+      setShowShareDialog(true);
+      return;
+    }
+    
+    if (!workspaceId) {
+      setSaveMessage('Please save your workspace before sharing');
+      setTimeout(() => setSaveMessage(''), 3000);
+      return;
+    }
+
+    try {
+      setIsShareLoading(true);
+      
+      const response = await fetch('/api/share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          workspaceId
+        })
+      });
+
+      if (response.status === 403) {
+        // Handle private workspace error
+        const errorData = await response.json();
+        if (errorData.isPrivate) {
+          setSaveMessage('Private workspaces cannot be shared. Change to Public first.');
+          setTimeout(() => setSaveMessage(''), 3000);
+        }
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to create share link');
+      }
+
+      const data = await response.json();
+      const shareLink = `${window.location.origin}/s/${data.shortCode}`;
+      setShareUrl(shareLink);
+      setShowShareDialog(true);
+    } catch (error) {
+      console.error('Error sharing workspace:', error);
+      setSaveMessage('Failed to create share link');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } finally {
+      setIsShareLoading(false);
+    }
+  };
+
+  // Handle copy to clipboard
+  const handleCopyLink = () => {
+    if (shareInputRef.current) {
+      shareInputRef.current.select();
+      document.execCommand('copy');
+      setSaveMessage('Link copied to clipboard!');
+      setTimeout(() => {
+        setSaveMessage('');
+        setShowShareDialog(false);
+      }, 2000);
+    }
+  };
+  
+  // Add this helper function to handle redirecting to regular editor view
+  const handleViewInEditor = () => {
+    if (workspaceId) {
+      navigate(`/editor/${workspaceId}`);
+    }
+  };
+  
+  // Handle access change (public/private)
+  const handleAccessChange = async (newAccess: string) => {
+    // Immediately update the access state for UI responsiveness
+    setAccess(newAccess);
+    
+    // If we're editing an existing workspace, update it
+    if (isEditMode && workspaceId) {
+      // Only update if user is authenticated
+      if (!isAuthenticated) {
+        return;
+      }
+      
+      try {
+        const isPublic = newAccess === 'Public';
+        
+        // Show a confirmation dialog if making the workspace private
+        if (!isPublic) {
+          // Use custom confirmation dialog instead of window.confirm
+          showConfirmation({
+            title: 'Change to Private?',
+            message: 'Making this workspace private will disable any existing share links. Only you will be able to access it.',
+            onConfirm: async () => {
+              // User confirmed, proceed with API call
+              try {
+                const response = await fetch(`/api/workspaces/${workspaceId}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                  },
+                  body: JSON.stringify({
+                    isPublic: false
+                  })
+                });
+                
+                if (!response.ok) {
+                  throw new Error('Failed to update workspace privacy');
+                }
+                
+                setSaveMessage('Workspace is now private');
+                setTimeout(() => setSaveMessage(''), 3000);
+              } catch (error) {
+                console.error('Error updating workspace privacy:', error);
+                setSaveMessage('Failed to update workspace privacy');
+                // Revert the UI change if the API call fails
+                setAccess('Public');
+                setTimeout(() => setSaveMessage(''), 3000);
+              }
+            },
+            onCancel: () => {
+              // User canceled, revert the select box
+              setAccess('Public');
+            }
+          });
+          return; // Exit early as the actual change will happen in the onConfirm callback
+        }
+        
+        // If making public (no confirmation needed), proceed with API call
+        const response = await fetch(`/api/workspaces/${workspaceId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            isPublic: true
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update workspace privacy');
+        }
+        
+        setSaveMessage('Workspace is now public');
+        setTimeout(() => setSaveMessage(''), 3000);
+      } catch (error) {
+        console.error('Error updating workspace privacy:', error);
+        setSaveMessage('Failed to update workspace privacy');
+        setTimeout(() => setSaveMessage(''), 3000);
+        // Revert the UI change
+        setAccess(access === 'Public' ? 'Private' : 'Public');
+      }
+    }
   };
   
   if (isLoading || isLoadingWorkspace) {
@@ -346,6 +649,39 @@ const CodeEditor = () => {
         backgroundRepeat: 'no-repeat',
       }}
     >
+      {/* Share Dialog */}
+      {showShareDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-semibold mb-4">Share this workspace</h3>
+            <p className="mb-4">Anyone with this link can view this workspace:</p>
+            <div className="flex">
+              <input
+                ref={shareInputRef}
+                type="text"
+                value={shareUrl}
+                readOnly
+                className="flex-grow border rounded-l p-2 bg-gray-50"
+              />
+              <button 
+                onClick={handleCopyLink}
+                className="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700"
+              >
+                Copy
+              </button>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button 
+                onClick={() => setShowShareDialog(false)}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white bg-opacity-10 backdrop-blur-sm shadow-lg rounded-lg overflow-hidden">
           <div className="bg-gray-800 px-4 py-3">
@@ -357,7 +693,13 @@ const CodeEditor = () => {
                   value={title}
                   onChange={handleTitleChange}
                   placeholder="Project Title"
+                  readOnly={isSharedView}
                 />
+                {isSharedView && (
+                  <span className="ml-2 px-2 py-1 bg-blue-600 rounded text-xs text-white">
+                    Shared View
+                  </span>
+                )}
               </div>
               <div className="flex space-x-2 items-center">
                 {saveMessage && (
@@ -365,24 +707,44 @@ const CodeEditor = () => {
                     {saveMessage}
                   </span>
                 )}
-                {isAuthenticated ? (
+                
+                {isSharedView ? (
+                  // For shared view
                   <button 
-                    className={`${isSaving ? 'bg-gray-500' : 'bg-green-600 hover:border-green-600 hover:bg-green-700'} text-white px-4 py-1 rounded text-sm`}
-                    onClick={handleSave}
-                    disabled={isSaving}
+                    onClick={handleViewInEditor}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded text-sm"
                   >
-                    {isSaving ? 'Saving...' : isEditMode ? 'Update' : 'Save'}
+                    View in Editor
                   </button>
                 ) : (
-                  <div className="flex items-center">
-                    <span className="text-amber-300 text-xs mr-2">
-                      <button onClick={() => openModal('login')} className="underline text-amber-300">Login</button> or <button onClick={() => openModal('register')} className="underline text-amber-300">Register</button> to save your code
-                    </span>
-                  </div>
+                  // For normal view
+                  <>
+                    {isAuthenticated ? (
+                      <button 
+                        className={`${isSaving ? 'bg-gray-500' : 'bg-green-600 hover:border-green-600 hover:bg-green-700'} text-white px-4 py-1 rounded text-sm`}
+                        onClick={handleSave}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? 'Saving...' : isEditMode ? 'Update' : 'Save'}
+                      </button>
+                    ) : (
+                      <div className="flex items-center">
+                        <span className="text-amber-300 text-xs mr-2">
+                          <button onClick={() => openModal('login')} className="underline text-amber-300">Login</button> or <button onClick={() => openModal('register')} className="underline text-amber-300">Register</button> to save your code
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
-                {(access === 'Public' || !isAuthenticated) && (
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded text-sm">
-                    Share
+                
+                {/* Only show Share button for public workspaces */}
+                {(access === 'Public' || (isSharedView && !isLoadingWorkspace)) && (
+                  <button 
+                    className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded text-sm ${isShareLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={handleShare}
+                    disabled={isShareLoading}
+                  >
+                    {isShareLoading ? 'Creating...' : 'Share'}
                   </button>
                 )}
               </div>
@@ -391,9 +753,10 @@ const CodeEditor = () => {
               <div className="flex items-center">
                 <span className="text-gray-300 text-sm mr-2">Language:</span>
                 <select 
-                  className="bg-gray-700 text-white px-3 py-1 rounded text-sm"
+                  className={`bg-gray-700 text-white px-3 py-1 rounded text-sm ${isSharedView ? 'cursor-not-allowed' : ''}`}
                   value={language}
                   onChange={(e) => handleLanguageChange(e.target.value)}
+                  disabled={isSharedView}
                 >
                   <option value="javascript">JavaScript</option>
                   <option value="python">Python</option>
@@ -406,14 +769,14 @@ const CodeEditor = () => {
                 </select>
               </div>
               
-              {isAuthenticated && (
+              {isAuthenticated && !isSharedView && (
                 <>
                   <div className="flex items-center">
                     <span className="text-gray-300 text-sm mr-2">Access:</span>
                     <select 
                       className="bg-gray-700 text-white px-3 py-1 rounded text-sm"
                       value={access}
-                      onChange={(e) => setAccess(e.target.value)}
+                      onChange={(e) => handleAccessChange(e.target.value)}
                     >
                       <option>Public</option>
                       <option>Private</option>
@@ -428,7 +791,7 @@ const CodeEditor = () => {
             <div className="flex-1">
               <Editor
                 value={code}
-                onValueChange={code => setCode(code)}
+                onValueChange={code => !isSharedView && setCode(code)}
                 highlight={code => highlightCode(code)}
                 padding={16}
                 style={{
@@ -444,6 +807,7 @@ const CodeEditor = () => {
                 }}
                 textareaId="codeEditor"
                 className="w-full focus:outline-none focus:ring-0 focus:border-0 active:outline-none active:ring-0 active:border-0"
+                readOnly={isSharedView}
               />
             </div>
           </div>
@@ -455,6 +819,11 @@ const CodeEditor = () => {
             <div className="flex space-x-4">
               <div>Characters: {code.length}</div>
               <div>Language: {language}</div>
+              {!isSharedView && (
+                <div className="text-xs text-gray-400">
+                  {!isAuthenticated ? 'Auto-saved to browser' : workspaceId ? 'Auto-saved' : 'Auto-saved to browser'}
+                </div>
+              )}
             </div>
           </div>
         </div>
