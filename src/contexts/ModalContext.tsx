@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
-type ModalType = 'login' | 'register' | null;
+type ModalType = 'login' | 'register' | 'createProject' | null;
 
 interface ModalContextType {
   modalType: ModalType;

@@ -241,14 +241,14 @@ const ProfilePage = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button 
                           onClick={() => handleOpenProject(workspace._id)}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
+                          className="text-blue-600 bg-blue-100 hover:border-blue-600 hover:text-blue-900 mr-4"
                         >
                           Open
                         </button>
                         <button 
                           onClick={() => handleDeleteWorkspace(workspace._id)}
                           disabled={deletingId === workspace._id}
-                          className={`text-red-600 hover:text-red-900 ${deletingId === workspace._id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          className={`text-red-600 bg-red-100 hover:border-red-600 hover:text-red-900 ${deletingId === workspace._id ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {deletingId === workspace._id ? 'Deleting...' : 'Delete'}
                         </button>

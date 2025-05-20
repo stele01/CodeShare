@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useWorkspace } from '../../contexts/WorkspaceContext';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { openModal } = useModal();
   const { isAuthenticated, logout } = useAuth();
+  const { hasActiveWorkspace, clearWorkspace } = useWorkspace();
   const navigate = useNavigate();
   const location = useLocation();
   const pendingScrollRef = useRef<string | null>(null);
@@ -44,6 +46,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout();
+    clearWorkspace();
   };
   
   const navigateToHash = (hash: string) => {
@@ -128,12 +131,14 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <Link 
-                  to="/editor"
-                  className="text-gray-300 hover:text-white bg-gray-700 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  My Editor
-                </Link>
+                {hasActiveWorkspace && (
+                  <Link 
+                    to="/editor"
+                    className="text-gray-300 hover:text-white bg-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    My Editor
+                  </Link>
+                )}
                 <Link 
                   to="/profile"
                   className="text-gray-300 hover:text-white bg-gray-800 px-3 py-2 rounded-md text-sm font-medium"
@@ -150,12 +155,21 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Link 
-                  to="/editor"
-                  className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-sm font-medium mr-4"
-                >
-                  Share as Guest
-                </Link>
+                {hasActiveWorkspace ? (
+                  <Link 
+                    to="/editor"
+                    className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-sm font-medium mr-4"
+                  >
+                    My Editor
+                  </Link>
+                ) : (
+                  <Link 
+                    to="/editor"
+                    className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-sm font-medium mr-4"
+                  >
+                    Share as Guest
+                  </Link>
+                )}
                 <button 
                   onClick={() => openModal('login')}
                   className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
@@ -215,12 +229,14 @@ const Navbar = () => {
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-700">
             {isAuthenticated ? (
               <>
-                <Link 
-                  to="/editor"
-                  className="text-gray-300 hover:text-white bg-gray-700 px-3 py-2 rounded-md text-base font-medium w-full text-left"
-                >
-                  My Editor
-                </Link>
+                {hasActiveWorkspace && (
+                  <Link 
+                    to="/editor"
+                    className="text-gray-300 hover:text-white bg-gray-700 px-3 py-2 rounded-md text-base font-medium w-full text-left"
+                  >
+                    My Editor
+                  </Link>
+                )}
                 <Link 
                   to="/profile"
                   className="text-gray-300 hover:text-white bg-gray-800 px-3 py-2 rounded-md text-base font-medium w-full text-left"
@@ -236,12 +252,21 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Link 
-                  to="/editor"
-                  className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-base font-medium w-full text-left"
-                >
-                  Share as Guest
-                </Link>
+                {hasActiveWorkspace ? (
+                  <Link 
+                    to="/editor"
+                    className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-base font-medium w-full text-left"
+                  >
+                    My Editor
+                  </Link>
+                ) : (
+                  <Link 
+                    to="/editor"
+                    className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-base font-medium w-full text-left"
+                  >
+                    Share as Guest
+                  </Link>
+                )}
                 <button 
                   onClick={() => {
                     openModal('login');

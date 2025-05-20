@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useModal } from '../../contexts/ModalContext';
+import { useWorkspace } from '../../contexts/WorkspaceContext';
 import Editor from 'react-simple-code-editor';
 import hljs from 'highlight.js/lib/core';
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -72,8 +73,10 @@ const editorStyles = `
 
 const CodeEditor = () => {
   const { id: workspaceId } = useParams();
+  const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
   const { openModal } = useModal();
+  const { setHasActiveWorkspace } = useWorkspace();
   const navigate = useNavigate();
   const [code, setCode] = useState('// Start coding here...\n\n');
   const [language, setLanguage] = useState('javascript');
@@ -83,6 +86,32 @@ const CodeEditor = () => {
   const [title, setTitle] = useState('Untitled Project');
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Handle state passed from the CreateProject component
+  useEffect(() => {
+    if (location.state) {
+      const { projectName, language: projectLanguage, isNewProject } = location.state as { 
+        projectName?: string;
+        language?: string; 
+        isNewProject?: boolean;
+      };
+      
+      if (isNewProject) {
+        if (projectName) setTitle(projectName);
+        if (projectLanguage) setLanguage(projectLanguage);
+        
+        // Clear the state to prevent reapplying on refresh
+        navigate(location.pathname, { replace: true });
+      }
+    }
+  }, [location, navigate]);
+  
+  // Set active workspace when component mounts with a workspaceId or state
+  useEffect(() => {
+    if (workspaceId || (location.state && location.state.isNewProject)) {
+      setHasActiveWorkspace(true);
+    }
+  }, [workspaceId, location.state, setHasActiveWorkspace]);
   
   // Fetch workspace data if ID is provided
   useEffect(() => {
@@ -237,6 +266,7 @@ const CodeEditor = () => {
       
       // If creating new workspace, update URL to enable edit mode
       if (!isEditMode) {
+        setHasActiveWorkspace(true);
         navigate(`/editor/${data._id}`, { replace: true });
         setIsEditMode(true);
       }
@@ -302,7 +332,7 @@ const CodeEditor = () => {
                 )}
                 {isAuthenticated ? (
                   <button 
-                    className={`${isSaving ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'} text-white px-4 py-1 rounded text-sm`}
+                    className={`${isSaving ? 'bg-gray-500' : 'bg-green-600 hover:border-green-600 hover:bg-green-700'} text-white px-4 py-1 rounded text-sm`}
                     onClick={handleSave}
                     disabled={isSaving}
                   >

@@ -1,154 +1,43 @@
+import { useEffect, useRef } from 'react';
 import { useModal } from '../../contexts/ModalContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 
 const Hero = () => {
   const { openModal } = useModal();
-  const { isAuthenticated } = useAuth();
-  const [animate, setAnimate] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
   
-  // Start animation after component mounts
   useEffect(() => {
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      setAnimate(true);
-    }, 50);
-    
-    return () => clearTimeout(timer);
+    if (heroRef.current) {
+      heroRef.current.classList.add('animate-fadeIn');
+    }
   }, []);
-  
+
   return (
-    <div className="bg-gradient-to-r from-gray-900 to-blue-900 text-white w-full min-h-screen flex items-center">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-40">
+    <div ref={heroRef} className="bg-gradient-to-r from-blue-600 to-indigo-700 py-20 opacity-0" style={{ animationDuration: '1s', animationFillMode: 'forwards' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h1 
-            className={`text-4xl tracking-tight font-extrabold sm:text-5xl md:text-6xl mb-4 opacity-0 ${
-              animate ? 'animate-fadeInDown' : ''
-            }`} 
-            style={{ animationDuration: '0.7s', animationFillMode: 'forwards' }}
-          >
-            <span className="block">Share Code in Real-Time</span>
+          <h1 className="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl">
+            <span className="block opacity-0 animate-fadeInDown" style={{ animationDelay: '0.3s', animationDuration: '0.8s', animationFillMode: 'forwards' }}>
+              Code Together.
+            </span>
+            <span className="block text-indigo-200 opacity-0 animate-fadeInUp" style={{ animationDelay: '0.6s', animationDuration: '0.8s', animationFillMode: 'forwards' }}>
+              Share Seamlessly.
+            </span>
           </h1>
-          
-          <h1 
-            className={`text-4xl tracking-tight font-extrabold sm:text-5xl md:text-6xl mb-6 opacity-0 ${
-              animate ? 'animate-fadeInUp' : ''
-            }`} 
-            style={{ 
-              animationDuration: '0.9s',
-              animationDelay: '0.3s',
-              animationFillMode: 'forwards'
-            }}
-          >
-            <span className="block text-blue-400">Collaborate Seamlessly</span>
-          </h1>
-          
-          <p 
-            className={`mt-6 max-w-3xl mx-auto text-lg text-gray-300 sm:text-xl md:mt-8 opacity-0 ${
-              animate ? 'animate-fadeInUp' : ''
-            }`}
-            style={{ 
-              animationDuration: '0.9s',
-              animationDelay: '0.6s',
-              animationFillMode: 'forwards'
-            }}
-          >
-            CodeShare is a platform that lets you share code snippets, collaborate in real-time, and get instant feedback from your peers. 
-            Perfect for interviews, code reviews, and teaching.
+          <p className="mt-3 max-w-md mx-auto text-base text-indigo-200 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl opacity-0 animate-fadeIn" 
+             style={{ animationDelay: '0.9s', animationDuration: '1s', animationFillMode: 'forwards' }}>
+            A modern platform for developers to create, share, and collaborate on code snippets in real-time.
           </p>
-          
-          <div 
-            className={`mt-10 sm:flex sm:justify-center opacity-0 ${
-              animate ? 'animate-zoomIn' : ''
-            }`}
-            style={{ 
-              animationDuration: '1.2s',
-              animationDelay: '0.9s',
-              animationFillMode: 'forwards'
-            }}
-          >
-            {!isAuthenticated ? (
-              <div className="rounded-md shadow">
-                <button
-                  onClick={() => openModal('login')}
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md
-                   text-blue-100 bg-blue-600 hover:bg-blue-700 hover:text-blue-100 md:py-4 md:text-lg md:px-10"
-                >
-                  Get Started
-                </button>
-              </div>
-            ) : (
-              <div className="rounded-md shadow">
-                <Link
-                  to="/editor"
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md
-                   text-blue-100 bg-blue-600 hover:bg-blue-700 hover:text-blue-100 md:py-4 md:text-lg md:px-10"
-                >
-                  Share Your Code
-                </Link>
-              </div>
-            )}
-            <div className="mt-3 sm:mt-0 sm:ml-3">
-              <a
-                href="#about"
-                className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md
-                 text-blue-600 bg-white hover:bg-gray-300 md:py-4 md:text-lg md:px-10"
-              >
-                Learn more
-              </a>
-            </div>
+          <div className="mt-10 flex justify-center gap-4 opacity-0 animate-fadeInUp" 
+               style={{ animationDelay: '1.2s', animationDuration: '0.8s', animationFillMode: 'forwards' }}>
+            <button
+              onClick={() => openModal('createProject')}
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 md:py-4 md:text-lg md:px-8 transition-colors duration-300"
+            >
+              Start Coding
+            </button>
           </div>
         </div>
       </div>
-      
-      {/* Add keyframe animations */}
-      <style>{`
-        @keyframes fadeInDown {
-          from {
-            opacity: 0;
-            transform: translateY(-50px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(50px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes zoomIn {
-          from {
-            opacity: 0;
-            transform: scale(0.8);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        
-        .animate-fadeInDown {
-          animation-name: fadeInDown;
-        }
-        
-        .animate-fadeInUp {
-          animation-name: fadeInUp;
-        }
-        
-        .animate-zoomIn {
-          animation-name: zoomIn;
-        }
-      `}</style>
     </div>
   );
 };
