@@ -100,10 +100,14 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
   const [lastSaved, setLastSaved] = useState<number>(Date.now());
   const codeRef = useRef(code);
   
+  // Add this ref to track the current access level - helps with closures in async callbacks
+  const accessRef = useRef('Public');
+  
   // Keep the ref in sync with the state
   useEffect(() => {
     codeRef.current = code;
-  }, [code]);
+    accessRef.current = access;
+  }, [code, access]);
   
   // Try to load code from localStorage on mount if we're not loading an existing workspace
   useEffect(() => {
@@ -147,7 +151,7 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
           title: title,
           code: codeRef.current,
           language: language,
-          isPublic: access === 'Public'
+          isPublic: accessRef.current === 'Public'
         })
       });
       
@@ -180,7 +184,7 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
     } catch (error) {
       console.error('Error auto-saving project:', error);
     }
-  }, [isAuthenticated, isEditMode, workspaceId, title, language, access, isSharedView, navigate, setHasActiveWorkspace]);
+  }, [isAuthenticated, isEditMode, workspaceId, title, language, accessRef, isSharedView, navigate, setHasActiveWorkspace]);
   
   // Setup autosave to localStorage (for all users) and to server (for authenticated users)
   useEffect(() => {
@@ -416,7 +420,7 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
           title: title,
           code: code,
           language: language,
-          isPublic: access === 'Public'
+          isPublic: accessRef.current === 'Public'
         })
       });
       
@@ -469,6 +473,13 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
 
   // Handle sharing functionality
   const handleShare = async () => {
+    // If in a private workspace, show a message
+    if (accessRef.current === 'Private' && !isSharedView) {
+      setSaveMessage('Private workspaces cannot be shared. Change to Public first.');
+      setTimeout(() => setSaveMessage(''), 3000);
+      return;
+    }
+    
     // If already in shared view, just show the current URL
     if (isSharedView) {
       const currentUrl = window.location.href;
@@ -545,8 +556,8 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
   
   // Handle access change (public/private)
   const handleAccessChange = async (newAccess: string) => {
-    // Immediately update the access state for UI responsiveness
-    setAccess(newAccess);
+    // Update the ref immediately
+    accessRef.current = newAccess;
     
     // If we're editing an existing workspace, update it
     if (isEditMode && workspaceId) {
@@ -560,12 +571,14 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
         
         // Show a confirmation dialog if making the workspace private
         if (!isPublic) {
+          // When changing to private, immediately update the UI
+          setAccess('Private');
+          
           // Use custom confirmation dialog instead of window.confirm
           showConfirmation({
             title: 'Change to Private?',
             message: 'Making this workspace private will disable any existing share links. Only you will be able to access it.',
             onConfirm: async () => {
-              // User confirmed, proceed with API call
               try {
                 const response = await fetch(`/api/workspaces/${workspaceId}`, {
                   method: 'PUT',
@@ -582,6 +595,9 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
                   throw new Error('Failed to update workspace privacy');
                 }
                 
+                // Force UI update to ensure consistency
+                setAccess('Private');
+                
                 setSaveMessage('Workspace is now private');
                 setTimeout(() => setSaveMessage(''), 3000);
               } catch (error) {
@@ -589,42 +605,54 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
                 setSaveMessage('Failed to update workspace privacy');
                 // Revert the UI change if the API call fails
                 setAccess('Public');
+                accessRef.current = 'Public';
                 setTimeout(() => setSaveMessage(''), 3000);
               }
             },
             onCancel: () => {
-              // User canceled, revert the select box
+              // User canceled, keep as public
               setAccess('Public');
+              accessRef.current = 'Public';
             }
           });
           return; // Exit early as the actual change will happen in the onConfirm callback
+        } else {
+          // When changing to public, immediately update the UI
+          setAccess('Public');
+          
+          // If making public (no confirmation needed), proceed with API call
+          const response = await fetch(`/api/workspaces/${workspaceId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              isPublic: true
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to update workspace privacy');
+          }
+          
+          setSaveMessage('Workspace is now public');
+          setTimeout(() => setSaveMessage(''), 3000);
         }
-        
-        // If making public (no confirmation needed), proceed with API call
-        const response = await fetch(`/api/workspaces/${workspaceId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({
-            isPublic: true
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to update workspace privacy');
-        }
-        
-        setSaveMessage('Workspace is now public');
-        setTimeout(() => setSaveMessage(''), 3000);
       } catch (error) {
         console.error('Error updating workspace privacy:', error);
         setSaveMessage('Failed to update workspace privacy');
         setTimeout(() => setSaveMessage(''), 3000);
         // Revert the UI change
-        setAccess(access === 'Public' ? 'Private' : 'Public');
+        if (accessRef.current === 'Public') {
+          setAccess('Private');
+        } else {
+          setAccess('Public');
+        }
       }
+    } else {
+      // Just update the local state if we're not in edit mode
+      setAccess(newAccess);
     }
   };
   
@@ -737,16 +765,19 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
                   </>
                 )}
                 
-                {/* Only show Share button for public workspaces */}
-                {(access === 'Public' || (isSharedView && !isLoadingWorkspace)) && (
-                  <button 
-                    className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded text-sm ${isShareLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={handleShare}
-                    disabled={isShareLoading}
-                  >
-                    {isShareLoading ? 'Creating...' : 'Share'}
-                  </button>
-                )}
+                {/* Share button with conditional styling based on access */}
+                <button 
+                  className={`${
+                    (access === 'Public' || (isSharedView && !isLoadingWorkspace)) 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : 'bg-gray-500 cursor-not-allowed'
+                  } text-white px-4 py-1 rounded text-sm ${isShareLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  onClick={handleShare}
+                  disabled={isShareLoading || (access === 'Private' && !isSharedView)}
+                  title={access === 'Private' ? 'Private workspaces cannot be shared' : 'Share this workspace'}
+                >
+                  {isShareLoading ? 'Creating...' : 'Share'}
+                </button>
               </div>
             </div>
             <div className="flex flex-wrap items-center space-x-4">
