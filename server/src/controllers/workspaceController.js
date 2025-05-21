@@ -182,11 +182,37 @@ const getPublicWorkspaces = async (req, res) => {
   }
 };
 
+// @desc    Create a temporary workspace for guest users
+// @route   POST /api/workspaces/guest
+// @access  Public
+const createGuestWorkspace = async (req, res) => {
+  try {
+    const { title, code, language } = req.body;
+
+    // Create a guest user ID that's consistent and recognizable
+    const guestUserId = process.env.GUEST_USER_ID || '000000000000000000000000';
+
+    const workspace = await Workspace.create({
+      title: title || 'Guest Workspace',
+      code,
+      language,
+      isPublic: true, // Guest workspaces are always public
+      user: guestUserId
+    });
+
+    res.status(201).json(workspace);
+  } catch (error) {
+    console.error('Error creating guest workspace:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 module.exports = {
   createWorkspace,
   getUserWorkspaces,
   getWorkspaceById,
   updateWorkspace,
   deleteWorkspace,
-  getPublicWorkspaces
+  getPublicWorkspaces,
+  createGuestWorkspace
 }; 

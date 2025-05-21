@@ -6,12 +6,14 @@ const {
   getWorkspaceById, 
   updateWorkspace, 
   deleteWorkspace, 
-  getPublicWorkspaces 
+  getPublicWorkspaces,
+  createGuestWorkspace
 } = require('../controllers/workspaceController');
 const { protect, optionalAuth } = require('../middleware/auth');
 
 // Public routes
 router.get('/public', getPublicWorkspaces);
+router.post('/guest', createGuestWorkspace);
 
 // Semi-protected route (handles public/private access internally)
 router.get('/:id', optionalAuth, getWorkspaceById);

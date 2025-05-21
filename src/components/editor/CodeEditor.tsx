@@ -488,6 +488,63 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
       return;
     }
     
+    // For non-authenticated users with unsaved projects, create a temporary workspace
+    if (!workspaceId && !isAuthenticated) {
+      try {
+        setIsShareLoading(true);
+        
+        // Create a temporary workspace to share
+        const guestResponse = await fetch('/api/workspaces/guest', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: title,
+            code: code,
+            language: language,
+            isPublic: true // Guest workspaces are always public
+          })
+        });
+        
+        if (!guestResponse.ok) {
+          throw new Error('Failed to create temporary workspace');
+        }
+        
+        const guestData = await guestResponse.json();
+        const tempWorkspaceId = guestData._id;
+        
+        // Now create a share link for this temporary workspace
+        const shareResponse = await fetch('/api/share', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            workspaceId: tempWorkspaceId
+          })
+        });
+        
+        if (!shareResponse.ok) {
+          throw new Error('Failed to create share link');
+        }
+        
+        const shareData = await shareResponse.json();
+        const shareLink = `${window.location.origin}/s/${shareData.shortCode}`;
+        setShareUrl(shareLink);
+        setShowShareDialog(true);
+        return;
+      } catch (error) {
+        console.error('Error creating temporary workspace for sharing:', error);
+        setSaveMessage('Failed to create share link');
+        setTimeout(() => setSaveMessage(''), 3000);
+        return;
+      } finally {
+        setIsShareLoading(false);
+      }
+    }
+    
+    // For authenticated users or already saved projects
     if (!workspaceId) {
       setSaveMessage('Please save your workspace before sharing');
       setTimeout(() => setSaveMessage(''), 3000);
