@@ -9,7 +9,8 @@ const WorkspaceSchema = new mongoose.Schema({
   },
   code: {
     type: String,
-    required: [true, 'Workspace must have code content'],
+    required: false,
+    default: '',
   },
   language: {
     type: String,

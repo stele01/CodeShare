@@ -9,7 +9,7 @@ const createWorkspace = async (req, res) => {
 
     const workspace = await Workspace.create({
       title: title || 'Untitled Workspace',
-      code,
+      code: code !== undefined ? code : '',
       language,
       isPublic: isPublic !== undefined ? isPublic : true,
       user: req.user._id
@@ -111,7 +111,8 @@ const updateWorkspace = async (req, res) => {
     
     // Update fields
     workspace.title = title || workspace.title;
-    workspace.code = code || workspace.code;
+    // Handle code updates, including empty strings
+    workspace.code = code !== undefined ? code : workspace.code;
     workspace.language = language || workspace.language;
     workspace.isPublic = isPublic !== undefined ? isPublic : workspace.isPublic;
     
@@ -194,7 +195,7 @@ const createGuestWorkspace = async (req, res) => {
 
     const workspace = await Workspace.create({
       title: title || 'Guest Workspace',
-      code,
+      code: code !== undefined ? code : '',
       language,
       isPublic: true, // Guest workspaces are always public
       user: guestUserId

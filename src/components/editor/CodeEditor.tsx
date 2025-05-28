@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useModal } from '../../contexts/ModalContext';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
+import { useSocket } from '../../contexts/SocketContext';
 import Editor from 'react-simple-code-editor';
 import hljs from 'highlight.js/lib/core';
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -84,11 +85,11 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
   const { isAuthenticated, isLoading } = useAuth();
   const { openModal, showConfirmation } = useModal();
   const { setHasActiveWorkspace } = useWorkspace();
+  const { socket, isConnected, joinWorkspace, sendCodeUpdate } = useSocket();
   const navigate = useNavigate();
   const [code, setCode] = useState('// Start coding here...\n\n');
   const [language, setLanguage] = useState('javascript');
   const [access, setAccess] = useState('Public');
-  const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [title, setTitle] = useState('Untitled Project');
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
@@ -97,7 +98,6 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
   const [shareUrl, setShareUrl] = useState('');
   const [showShareDialog, setShowShareDialog] = useState(false);
   const shareInputRef = useRef<HTMLInputElement>(null);
-  const [lastSaved, setLastSaved] = useState<number>(Date.now());
   const codeRef = useRef(code);
   
   // Add this ref to track the current access level - helps with closures in async callbacks
@@ -128,93 +128,102 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
     }
   }, [workspaceId, isSharedView, isLoadingWorkspace]);
   
-  // Memoize the save function to use in the effect
-  const handleAutoSave = useCallback(async () => {
-    if (!isAuthenticated) {
-      return;
-    }
-    
-    try {
-      console.log('Auto-saving workspace...');
-      
-      // If in edit mode, update the existing workspace
-      const url = isEditMode ? `/api/workspaces/${workspaceId}` : '/api/workspaces';
-      const method = isEditMode ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          title: title,
-          code: codeRef.current,
-          language: language,
-          isPublic: accessRef.current === 'Public'
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Error auto-saving:', errorData);
-        return;
-      }
-      
-      const data = await response.json();
-      
-      // If creating new workspace, update URL to enable edit mode
-      if (!isEditMode) {
-        setHasActiveWorkspace(true);
-        
-        // If in shared view, stay there, otherwise navigate to normal editor URL
-        if (!isSharedView) {
-          navigate(`/editor/${data._id}`, { replace: true });
-        }
-        setIsEditMode(true);
-        
-        // Clear localStorage saved code after successful save of a new workspace
-        localStorage.removeItem('unsavedCode');
-        localStorage.removeItem('unsavedLanguage');
-        localStorage.removeItem('unsavedTitle');
-      }
-      
-      console.log('Auto-save successful');
-      setLastSaved(Date.now());
-    } catch (error) {
-      console.error('Error auto-saving project:', error);
-    }
-  }, [isAuthenticated, isEditMode, workspaceId, title, language, accessRef, isSharedView, navigate, setHasActiveWorkspace]);
-  
-  // Setup autosave to localStorage (for all users) and to server (for authenticated users)
+  // Join the workspace socket room when workspaceId is available
   useEffect(() => {
-    if (isSharedView) return; // Don't autosave in shared view
-    
-    // Save to localStorage every 2 seconds when code changes
-    const localSaveInterval = setInterval(() => {
-      const currentCode = codeRef.current;
-      if (currentCode) {
-        localStorage.setItem('unsavedCode', currentCode);
-        localStorage.setItem('unsavedLanguage', language);
-        localStorage.setItem('unsavedTitle', title);
-      }
-    }, 2000);
-    
-    // Server autosave for authenticated users every 30 seconds
-    const serverSaveInterval = setInterval(() => {
-      if (isAuthenticated && workspaceId && (Date.now() - lastSaved > 30000)) {
-        // Only save if code has changed since last save
-        if (codeRef.current && !isSaving) {
-          handleAutoSave();
-        }
-      }
-    }, 30000);
-    
-    return () => {
-      clearInterval(localSaveInterval);
-      clearInterval(serverSaveInterval);
+    if (workspaceId && isConnected) {
+      joinWorkspace(workspaceId);
+    }
+  }, [workspaceId, isConnected, joinWorkspace]);
+
+  // Listen for code updates from other clients
+  useEffect(() => {
+    if (!socket || isSharedView) return;
+
+    const handleCodeUpdated = (data: { code: string; language: string; title: string; access: string }) => {
+      console.log('Received code update from server:', data);
+      // Explicitly check if code property exists, not if it's truthy
+      if (data.code !== undefined) setCode(data.code);
+      if (data.language) setLanguage(data.language);
+      if (data.title) setTitle(data.title);
+      if (data.access) setAccess(data.access);
     };
-  }, [isAuthenticated, workspaceId, language, title, isSharedView, isSaving, lastSaved, handleAutoSave]);
+
+    socket.on('code-updated', handleCodeUpdated);
+
+    return () => {
+      socket.off('code-updated', handleCodeUpdated);
+    };
+  }, [socket, isSharedView]);
+
+  // Setup real-time autosave via Socket.IO
+  const handleRealtimeUpdate = useCallback(
+    debounce((updatedCode: string) => {
+      if (!isSharedView && workspaceId) {
+        sendCodeUpdate({
+          workspaceId,
+          code: updatedCode,
+          language,
+          title,
+          access
+        });
+      }
+    }, 500),
+    [workspaceId, language, title, access, isSharedView, sendCodeUpdate]
+  );
+
+  // Add debounce utility function for string input
+  function debounce(func: (value: string) => void, wait: number): (value: string) => void {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    
+    return (value: string) => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => func(value), wait);
+    };
+  }
+
+  // Update the code change handler to use Socket.IO
+  const handleCodeChange = (newCode: string) => {
+    console.log(`Code change detected: ${newCode.length} characters${newCode === '' ? ' (empty)' : ''}`);
+    setCode(newCode);
+    // Update the ref immediately for use in other callbacks
+    codeRef.current = newCode;
+    // Send the update to server (debounced)
+    // Always send updates, even if code is empty
+    handleRealtimeUpdate(newCode);
+  };
+
+  // Update the title change handler to use Socket.IO
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setTitle(newTitle);
+    
+    // Only send if we have a workspaceId
+    if (workspaceId && isConnected && !isSharedView) {
+      sendCodeUpdate({
+        workspaceId,
+        code,
+        language,
+        title: newTitle,
+        access
+      });
+    }
+  };
+
+  // Update the language change handler to use Socket.IO
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+    
+    // Only send if we have a workspaceId
+    if (workspaceId && isConnected && !isSharedView) {
+      sendCodeUpdate({
+        workspaceId,
+        code,
+        language: newLanguage,
+        title,
+        access
+      });
+    }
+  };
   
   // Handle state passed from the CreateProject component
   useEffect(() => {
@@ -369,12 +378,6 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
     return '// Start coding here...\n\n\n';
   };
 
-  // Handle language change
-  const handleLanguageChange = (newLanguage: string) => {
-    setLanguage(newLanguage);
-    // Don't reset code when changing language
-  };
-  
   // Set initial starter code - only run once on mount and when not in edit mode
   useEffect(() => {
     if (!isEditMode) {
@@ -393,84 +396,6 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
     }
   };
   
-  // Handle saving project
-  const handleSave = async () => {
-    if (!isAuthenticated) {
-      openModal('login');
-      return;
-    }
-    
-    try {
-      setIsSaving(true);
-      setSaveMessage('');
-      
-      console.log('Sending save request to /api/workspaces');
-      
-      // If in edit mode, update the existing workspace
-      const url = isEditMode ? `/api/workspaces/${workspaceId}` : '/api/workspaces';
-      const method = isEditMode ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          title: title,
-          code: code,
-          language: language,
-          isPublic: accessRef.current === 'Public'
-        })
-      });
-      
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Error response:', errorData);
-        throw new Error(errorData.message || 'Failed to save project');
-      }
-      
-      const data = await response.json();
-      console.log('Save successful:', data);
-      
-      // If creating new workspace, update URL to enable edit mode
-      if (!isEditMode) {
-        setHasActiveWorkspace(true);
-        
-        // If in shared view, stay there, otherwise navigate to normal editor URL
-        if (!isSharedView) {
-          navigate(`/editor/${data._id}`, { replace: true });
-        }
-        setIsEditMode(true);
-        
-        // Clear localStorage saved code after successful save of a new workspace
-        localStorage.removeItem('unsavedCode');
-        localStorage.removeItem('unsavedLanguage');
-        localStorage.removeItem('unsavedTitle');
-      }
-      
-      setLastSaved(Date.now());
-      setSaveMessage('Project saved successfully!');
-      
-      // After 3 seconds, clear the save message
-      setTimeout(() => {
-        setSaveMessage('');
-      }, 3000);
-    } catch (error) {
-      console.error('Error saving project:', error);
-      setSaveMessage('Failed to save project. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-  
-  // Handle title change
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
-  };
-
   // Handle sharing functionality
   const handleShare = async () => {
     // If in a private workspace, show a message
@@ -616,7 +541,21 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
     // Update the ref immediately
     accessRef.current = newAccess;
     
-    // If we're editing an existing workspace, update it
+    // For both authenticated and non-authenticated users, update local state
+    setAccess(newAccess);
+    
+    // Send real-time update for access change if connected to socket
+    if (workspaceId && isConnected && !isSharedView) {
+      sendCodeUpdate({
+        workspaceId,
+        code,
+        language,
+        title,
+        access: newAccess
+      });
+    }
+    
+    // If we're editing an existing workspace, update it in the database
     if (isEditMode && workspaceId) {
       // Only update if user is authenticated
       if (!isAuthenticated) {
@@ -628,9 +567,6 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
         
         // Show a confirmation dialog if making the workspace private
         if (!isPublic) {
-          // When changing to private, immediately update the UI
-          setAccess('Private');
-          
           // Use custom confirmation dialog instead of window.confirm
           showConfirmation({
             title: 'Change to Private?',
@@ -674,9 +610,6 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
           });
           return; // Exit early as the actual change will happen in the onConfirm callback
         } else {
-          // When changing to public, immediately update the UI
-          setAccess('Public');
-          
           // If making public (no confirmation needed), proceed with API call
           const response = await fetch(`/api/workspaces/${workspaceId}`, {
             method: 'PUT',
@@ -707,9 +640,6 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
           setAccess('Public');
         }
       }
-    } else {
-      // Just update the local state if we're not in edit mode
-      setAccess(newAccess);
     }
   };
   
@@ -802,17 +732,9 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
                     View in Editor
                   </button>
                 ) : (
-                  // For normal view
+                  // For normal view - remove save button but keep login prompt
                   <>
-                    {isAuthenticated ? (
-                      <button 
-                        className={`${isSaving ? 'bg-gray-500' : 'bg-green-600 hover:border-green-600 hover:bg-green-700'} text-white px-4 py-1 rounded text-sm`}
-                        onClick={handleSave}
-                        disabled={isSaving}
-                      >
-                        {isSaving ? 'Saving...' : isEditMode ? 'Update' : 'Save'}
-                      </button>
-                    ) : (
+                    {!isAuthenticated && (
                       <div className="flex items-center">
                         <span className="text-amber-300 text-xs mr-2">
                           <button onClick={() => openModal('login')} className="underline text-amber-300">Login</button> or <button onClick={() => openModal('register')} className="underline text-amber-300">Register</button> to save your code
@@ -877,26 +799,28 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
           
           <div className="bg-gray-700 flex flex-col min-h-[600px]">
             <div className="flex-1">
-              <Editor
-                value={code}
-                onValueChange={code => !isSharedView && setCode(code)}
-                highlight={code => highlightCode(code)}
-                padding={16}
-                style={{
-                  fontFamily: "'Fira code', 'Fira Mono', monospace",
-                  fontSize: 14,
-                  lineHeight: 1.5,
-                  color: '#f7fafc',
-                  width: '100%',
-                  minHeight: '650px',
-                  outline: 'none',
-                  border: 'none',
-                  boxShadow: 'none'
-                }}
-                textareaId="codeEditor"
-                className="w-full focus:outline-none focus:ring-0 focus:border-0 active:outline-none active:ring-0 active:border-0"
-                readOnly={isSharedView}
-              />
+              <div className="relative h-full w-full overflow-hidden rounded-b-lg">
+                <Editor
+                  value={code}
+                  onValueChange={handleCodeChange}
+                  highlight={highlightCode}
+                  padding={20}
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: '14px',
+                    minHeight: '60vh',
+                    backgroundColor: '#1e1e1e',
+                    color: '#d4d4d4',
+                    width: '100%',
+                    border: 'none',
+                    outline: 'none',
+                    resize: 'none',
+                    caretColor: '#fff',
+                  }}
+                  textareaId="codeEditor"
+                  className="code-editor"
+                />
+              </div>
             </div>
           </div>
                 
@@ -908,8 +832,9 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
               <div>Characters: {code.length}</div>
               <div>Language: {language}</div>
               {!isSharedView && (
-                <div className="text-xs text-gray-400">
-                  {!isAuthenticated ? 'Auto-saved to browser' : workspaceId ? 'Auto-saved' : 'Auto-saved to browser'}
+                <div className="text-xs text-gray-400 flex items-center">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
+                  {isAuthenticated ? 'Auto-saved in real-time' : 'Changes stored in browser'}
                 </div>
               )}
             </div>
