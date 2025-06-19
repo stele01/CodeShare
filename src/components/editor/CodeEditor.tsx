@@ -799,27 +799,48 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
           
           <div className="bg-gray-700 flex flex-col min-h-[600px]">
             <div className="flex-1">
-              <div className="relative h-full w-full overflow-hidden rounded-b-lg">
-                <Editor
-                  value={code}
-                  onValueChange={handleCodeChange}
-                  highlight={highlightCode}
-                  padding={20}
+              <div className="relative h-full w-full overflow-hidden rounded-b-lg flex">
+                {/* Line numbers */}
+                <div
+                  className="bg-gray-800 text-gray-400 select-none text-right"
                   style={{
+                    minWidth: '2.5rem',
+                    userSelect: 'none',
                     fontFamily: 'monospace',
                     fontSize: '14px',
-                    minHeight: '60vh',
-                    backgroundColor: '#1e1e1e',
-                    color: '#d4d4d4',
-                    width: '100%',
-                    border: 'none',
-                    outline: 'none',
-                    resize: 'none',
-                    caretColor: '#fff',
+                    lineHeight: '1.5',
+                    paddingTop: 20,
+                    paddingBottom: 20,
                   }}
-                  textareaId="codeEditor"
-                  className="code-editor"
-                />
+                >
+                  {code.split('\n').map((_, i) => (
+                    <div key={i} style={{ height: '1.5em' }}>{i + 1}</div>
+                  ))}
+                </div>
+                {/* Code editor */}
+                <div className="flex-1 overflow-auto">
+                  <Editor
+                    value={code}
+                    onValueChange={handleCodeChange}
+                    highlight={highlightCode}
+                    padding={20}
+                    style={{
+                      fontFamily: 'monospace',
+                      fontSize: '14px',
+                      minHeight: '60vh',
+                      backgroundColor: '#1e1e1e',
+                      color: '#d4d4d4',
+                      width: '100%',
+                      border: 'none',
+                      outline: 'none',
+                      resize: 'none',
+                      caretColor: '#fff',
+                      lineHeight: '1.5',
+                    }}
+                    textareaId="codeEditor"
+                    className="code-editor"
+                  />
+                </div>
               </div>
             </div>
           </div>

@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useModal } from '../../contexts/ModalContext';
+import React from 'react';
+import { handleCtrlClickNavigation } from '../../utils/navigation';
 
 type FAQItemProps = {
   question: string;
-  answer: string;
+  answer: React.ReactNode;
   isLast: boolean;
   isOpen: boolean;
   toggleOpen: () => void;
@@ -44,7 +48,7 @@ const FAQItem = ({ question, answer, isLast, isOpen, toggleOpen }: FAQItemProps)
         >
           {/* Answer Content */}
           <div className="p-5">
-            <p className="text-gray-600">{answer}</p>
+            <div className="text-gray-600">{answer}</div>
           </div>
         </div>
       </div>
@@ -55,6 +59,8 @@ const FAQItem = ({ question, answer, isLast, isOpen, toggleOpen }: FAQItemProps)
 const FAQ = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [animate, setAnimate] = useState(false);
+  const { openModal } = useModal();
+  const navigate = useNavigate();
   
   // Start animation when component is visible in viewport
   useEffect(() => {
@@ -80,28 +86,84 @@ const FAQ = () => {
   const faqItems = [
     {
       question: "What is CodeShare?",
-      answer: "CodeShare is a platform that allows developers to write, save, and share code snippets with others. It supports multiple programming languages and provides syntax highlighting for better readability."
+      answer: (
+        <>
+          CodeShare is a platform that allows developers to write, save, and share code snippets with others. It supports multiple programming languages and provides syntax highlighting for better readability.
+        </>
+      ),
     },
     {
       question: "Do I need an account to use CodeShare?",
-      answer: "You can use the code editor without an account, but you'll need to create an account to save your code snippets and access them later. Creating an account is free and only takes a minute."
+      answer: (
+        <>
+          You can use the code editor without an account, but you'll need to create an account to save your code snippets and access them later. Creating an account is free and only takes a minute.
+          <br />
+          <span
+            className="text-blue-600 underline hover:text-blue-800 cursor-pointer font-bold"
+            onClick={() => openModal('register')}
+            role="button"
+            tabIndex={0}
+            onKeyPress={e => { if (e.key === 'Enter' || e.key === ' ') openModal('register'); }}
+          >
+            Create an account
+          </span>
+        </>
+      ),
     },
     {
       question: "Which programming languages are supported?",
-      answer: "CodeShare currently supports JavaScript, Python, Java, C#, C++, PHP, HTML, and CSS. We're constantly working on adding support for more languages."
+      answer: (
+        <>
+          CodeShare currently supports JavaScript, Python, Java, C#, C++, PHP, HTML, and CSS. We're constantly working on adding support for more languages.
+          <br />
+          <span
+            className="text-blue-600 underline hover:text-blue-800 cursor-pointer font-bold"
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              const el = document.getElementById('features');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            onKeyPress={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                const el = document.getElementById('features');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+          >
+            See all features
+          </span>
+        </>
+      ),
     },
     {
       question: "Can I collaborate with others on a code snippet?",
-      answer: "Currently, CodeShare allows you to share your code snippets with others via a link. Real-time collaboration features are on our roadmap and will be available in future updates."
+      answer: (
+        <>
+          Currently, CodeShare allows you to share your code snippets with others via a link. Real-time collaboration features are on our roadmap and will be available in future updates.
+          <br />
+          <span
+            className="text-blue-600 underline hover:text-blue-800 cursor-pointer font-bold"
+            role="button"
+            tabIndex={0}
+            onClick={e => handleCtrlClickNavigation(e, '/editor', navigate)}
+            onKeyPress={e => { if (e.key === 'Enter' || e.key === ' ') navigate('/editor'); }}
+          >
+            Try the editor
+          </span>
+        </>
+      ),
     },
     {
       question: "Is my code private?",
-      answer: "You can choose whether your code snippets are public or private. Public snippets can be viewed by anyone with the link, while private snippets are only accessible to you."
+      answer: "You can choose whether your code snippets are public or private. Public snippets can be viewed by anyone with the link, while private snippets are only accessible to you.",
     },
     {
       question: "Is CodeShare free to use?",
-      answer: "Yes, CodeShare is completely free to use. We may introduce premium features in the future, but the core functionality will always remain free."
-    }
+      answer: "Yes, CodeShare is completely free to use. We may introduce premium features in the future, but the core functionality will always remain free.",
+    },
   ];
 
   // Function to toggle FAQ item open/closed
