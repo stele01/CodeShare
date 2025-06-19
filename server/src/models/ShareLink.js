@@ -14,8 +14,12 @@ const ShareLinkSchema = new mongoose.Schema({
   },
   createdAt: {
     type: Date,
-    default: Date.now,
-    expires: '30d' // Links expire after 30 days
+    default: Date.now
+  },
+  expiresAt: {
+    type: Date,
+    required: true,
+    index: { expires: 0 } // TTL index: remove at the moment of expiration
   }
 });
 

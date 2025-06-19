@@ -25,7 +25,9 @@ const generateShortCode = () => {
 const createShareLink = async (req, res) => {
   try {
     const { workspaceId } = req.body;
-    
+    // Assume req.user exists if authenticated, otherwise guest
+    const isAuthenticated = !!req.user;
+
     if (!workspaceId) {
       return res.status(400).json({ message: 'Workspace ID is required' });
     }
@@ -45,15 +47,18 @@ const createShareLink = async (req, res) => {
       });
     }
     
-    // Check if a share link already exists for this workspace
-    let shareLink = await ShareLink.findOne({ workspaceId });
+    // Check if a non-expired share link already exists for this workspace
+    let shareLink = await ShareLink.findOne({ 
+      workspaceId,
+      expiresAt: { $gt: new Date() }
+    });
     
     if (shareLink) {
-      // Return existing share link
       return res.status(200).json({
         shortCode: shareLink.shortCode,
         workspaceId: shareLink.workspaceId,
-        createdAt: shareLink.createdAt
+        createdAt: shareLink.createdAt,
+        expiresAt: shareLink.expiresAt
       });
     }
     
@@ -63,23 +68,26 @@ const createShareLink = async (req, res) => {
     
     while (!isUnique) {
       shortCode = generateShortCode();
-      // Check if the code already exists
       const existingLink = await ShareLink.findOne({ shortCode });
-      if (!existingLink) {
-        isUnique = true;
-      }
+      if (!existingLink) isUnique = true;
     }
+    
+    // Set expiration: 60 min for guests, 24h for users
+    const expiresInMs = isAuthenticated ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000;
+    const expiresAt = new Date(Date.now() + expiresInMs);
     
     // Create a new share link
     shareLink = await ShareLink.create({
       shortCode,
-      workspaceId
+      workspaceId,
+      expiresAt
     });
     
     res.status(201).json({
       shortCode: shareLink.shortCode,
       workspaceId: shareLink.workspaceId,
-      createdAt: shareLink.createdAt
+      createdAt: shareLink.createdAt,
+      expiresAt: shareLink.expiresAt
     });
   } catch (error) {
     console.error('Error creating share link:', error);
@@ -96,7 +104,7 @@ const resolveShareLink = async (req, res) => {
     
     const shareLink = await ShareLink.findOne({ shortCode });
     
-    if (!shareLink) {
+    if (!shareLink || shareLink.expiresAt < new Date()) {
       return res.status(404).json({ message: 'Share link not found or expired' });
     }
     

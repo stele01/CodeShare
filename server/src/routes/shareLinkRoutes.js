@@ -4,9 +4,10 @@ const {
   createShareLink, 
   resolveShareLink
 } = require('../controllers/shareLinkController');
+const { optionalAuth } = require('../middleware/auth');
 
 // Create a share link
-router.post('/', createShareLink);
+router.post('/', optionalAuth, createShareLink);
 
 // Resolve a share link
 router.get('/:shortCode', resolveShareLink);

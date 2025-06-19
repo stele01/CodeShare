@@ -440,10 +440,12 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
         const tempWorkspaceId = guestData._id;
         
         // Now create a share link for this temporary workspace
+        const token = localStorage.getItem('token');
         const shareResponse = await fetch('/api/share', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
           },
           body: JSON.stringify({
             workspaceId: tempWorkspaceId
@@ -479,10 +481,12 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
     try {
       setIsShareLoading(true);
       
+      const token = localStorage.getItem('token');
       const response = await fetch('/api/share', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
           workspaceId
@@ -678,17 +682,22 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
                 readOnly
                 className="flex-grow border rounded-l p-2 bg-gray-50"
               />
-              <button 
+              <button
                 onClick={handleCopyLink}
                 className="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700"
               >
                 Copy
               </button>
             </div>
-            <div className="mt-6 flex justify-end">
-              <button 
+            <div className="flex items-center justify-between mt-2">
+              <div className="text-xs text-gray-500">
+                {isAuthenticated
+                  ? 'This link will expire in 24 hours.'
+                  : 'This link will expire in 60 minutes.'}
+              </div>
+              <button
                 onClick={() => setShowShareDialog(false)}
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                className="ml-4 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm"
               >
                 Close
               </button>
