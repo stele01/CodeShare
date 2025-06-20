@@ -1,0 +1,108 @@
+{
+  "language": {
+    "en": "Engleski (US)",
+    "srLatn": "Srpski (Latinica)",
+    "srCyrl": "Srpski (Ćirilica)"
+  },
+  "navbar": {
+    "register": "Registruj se",
+    "profile": "Profil",
+    "logout": "Odjavi se",
+    "my_editor": "Moj Editor",
+    "share_as_guest": "Podeli kao gost"
+  },
+  "home": {
+    "about_us": "O nama",
+    "features": "Funkcionalnosti",
+    "faq": "FAQ",
+    "mission": "Naša misija je da deljenje koda učinimo jednostavnim",
+    "team": "Mi smo tim programera koji veruje da saradnja na kodu treba da bude laka i dostupna svima.",
+    "hero_title1": "Programirajmo zajedno.",
+    "hero_title2": "Delite bez prepreka.",
+    "hero_desc": "Moderna platforma za programere za kreiranje, deljenje i saradnju na kodu u realnom vremenu.",
+    "start_coding": "Započni programiranje",
+    "features_subtitle": "Sve što vam treba za deljenje koda",
+    "features_desc": "Naša platforma pruža sve alate potrebne za efikasnu saradnju.",
+    "features_1_title": "Saradnja u realnom vremenu",
+    "features_1_desc": "Više korisnika može istovremeno uređivati kod uz trenutna ažuriranja za sve.",
+    "features_2_title": "Sintaksno isticanje",
+    "features_2_desc": "Podrška za više programskih jezika sa lepim isticanjem sintakse.",
+    "features_3_title": "Sigurno deljenje",
+    "features_3_desc": "Jednostavno podelite svoje kodove putem sigurnih linkova – idealno za brzu saradnju.",
+    "features_4_title": "Izvršavanje koda",
+    "features_4_desc": "Pokrenite svoj kod direktno u pregledaču i odmah vidite rezultate – savršeno za testiranje i učenje."
+  },
+  "editor": {
+    "project_title": "Naziv projekta",
+    "shared_view": "Deljeni prikaz",
+    "login": "Prijavi se",
+    "or": "ili",
+    "to_save": "da sačuvate vaš kod",
+    "auto_saved": "Automatski sačuvano u realnom vremenu",
+    "changes_stored": "Izmene su sačuvane u pregledaču",
+    "lines": "Linije:",
+    "characters": "Karakteri:",
+    "language": "Jezik:"
+  },
+  "modal": {
+    "delete": "Obriši",
+    "ok": "U redu",
+    "cancel": "Otkaži"
+  },
+  "auth": {
+    "name_required": "Ime je obavezno",
+    "email_required": "Email je obavezan",
+    "email_invalid": "Email nije validan",
+    "password_required": "Lozinka je obavezna",
+    "password_min": "Lozinka mora imati najmanje 6 karaktera",
+    "passwords_no_match": "Lozinke se ne poklapaju",
+    "login": "Prijava",
+    "email": "Email",
+    "password": "Lozinka",
+    "remember_me": "Zapamti me",
+    "forgot_password": "Zaboravljena lozinka?",
+    "signing_in": "Prijavljivanje...",
+    "sign_in": "Prijavi se",
+    "no_account": "Nemate nalog?",
+    "register": "Registruj se",
+    "invalid_credentials": "Neispravan email ili lozinka. Pokušajte ponovo.",
+    "error_occurred": "Došlo je do greške. Pokušajte ponovo."
+  },
+  "create_project": {
+    "project_name": "Naziv projekta",
+    "programming_language": "Programski jezik"
+  },
+  "languages": {
+    "javascript": "JavaScript",
+    "python": "Python",
+    "java": "Java",
+    "csharp": "C#",
+    "cpp": "C++",
+    "php": "PHP",
+    "html": "HTML",
+    "css": "CSS"
+  },
+  "faq": {
+    "title": "Često postavljana pitanja",
+    "q1": "Šta je ATVSS CodeShare?",
+    "a1": "ATVSS CodeShare je platforma koja omogućava programerima da pišu, sačuvaju i dele kod sa drugima. Podržava više programskih jezika i nudi isticanje sintakse radi bolje preglednosti.",
+    "q2": "Da li mi je potreban nalog za korišćenje ATVSS CodeShare-a?",
+    "a2_1": "Možete koristiti editor bez naloga, ali je potrebno da napravite nalog kako biste sačuvali kod i pristupili mu kasnije. Kreiranje naloga je besplatno i traje samo minut.",
+    "a2_link": "Napravi nalog",
+    "q3": "Koji programski jezici su podržani?",
+    "a3_1": "ATVSS CodeShare trenutno podržava JavaScript, Python, Java, C#, C++, PHP, HTML i CSS. Konstantno radimo na dodavanju podrške za još jezika.",
+    "a3_link": "Pogledaj sve funkcionalnosti",
+    "q4": "Mogu li da sarađujem sa drugima na kodu?",
+    "a4_1": "Trenutno, ATVSS CodeShare omogućava deljenje koda putem linka. Saradnja u realnom vremenu je na našem planu i biće dostupna u budućim verzijama.",
+    "a4_link": "Probaj editor",
+    "q5": "Da li je moj kod privatan?",
+    "a5": "Možete izabrati da li će vaš kod biti javan ili privatan. Javni kod je dostupan svima sa linkom, dok je privatan dostupan samo vama.",
+    "q6": "Da li je ATVSS CodeShare besplatan?",
+    "a6": "Da, ATVSS CodeShare je potpuno besplatan za korišćenje. Možda ćemo u budućnosti uvesti premium opcije, ali osnovne funkcionalnosti će uvek biti besplatne."
+  },
+  "brand": "ATVSS DeliteljKoda",
+  "footer": {
+    "copyright": "ATVSS DeliteljKoda, Inc. Sva prava zadržana.",
+    "github": "GitHub"
+  }
+} 

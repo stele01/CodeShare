@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Features = () => {
+  const { t } = useTranslation();
   const [animate, setAnimate] = useState(false);
   
   // Start animation when component is visible in viewport
@@ -27,8 +29,8 @@ const Features = () => {
   const features = [
     {
       id: 1,
-      title: 'Real-time Collaboration',
-      description: 'Multiple users can edit code simultaneously with instant updates for everyone.',
+      title: t('home.features_1_title'),
+      description: t('home.features_1_desc'),
       icon: (
         <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -37,8 +39,8 @@ const Features = () => {
     },
     {
       id: 2,
-      title: 'Syntax Highlighting',
-      description: 'Support for multiple programming languages with beautiful syntax highlighting.',
+      title: t('home.features_2_title'),
+      description: t('home.features_2_desc'),
       icon: (
         <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -47,8 +49,8 @@ const Features = () => {
     },
     {
       id: 3,
-      title: 'Secure Sharing',
-      description: 'Easily share your code snippets through secure links - perfect for quick collaboration',
+      title: t('home.features_3_title'),
+      description: t('home.features_3_desc'),
       icon: (
         <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
@@ -58,8 +60,8 @@ const Features = () => {
     },
     {
       id: 4,
-      title: 'Code Execution',
-      description: 'Run your code directly in the browser to see results instantly - perfect for testing and learning',
+      title: t('home.features_4_title'),
+      description: t('home.features_4_desc'),
       icon: (
         <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
@@ -84,7 +86,7 @@ const Features = () => {
               animationFillMode: 'forwards'
             }}
           >
-            Features
+            {t('home.features')}
           </h2>
           
           <p 
@@ -97,7 +99,7 @@ const Features = () => {
               animationFillMode: 'forwards'
             }}
           >
-            Everything you need for code sharing
+            {t('home.features_subtitle')}
           </p>
           
           <p 
@@ -110,7 +112,7 @@ const Features = () => {
               animationFillMode: 'forwards'
             }}
           >
-            Our platform provides all the tools you need to collaborate efficiently.
+            {t('home.features_desc')}
           </p>
         </div>
 

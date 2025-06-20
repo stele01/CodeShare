@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Hero from './Hero';
 import Features from './Features';
 import FAQ from './FAQ';
@@ -7,6 +8,7 @@ import FAQ from './FAQ';
 const HomePage = () => {
   const location = useLocation();
   const [aboutAnimate, setAboutAnimate] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Handle hash navigation when component mounts or location changes
@@ -74,7 +76,7 @@ const HomePage = () => {
                 animationFillMode: 'forwards' 
               }}
             >
-              About Us
+              {t('home.about_us')}
             </h2>
             
             <p 
@@ -87,7 +89,7 @@ const HomePage = () => {
                 animationFillMode: 'forwards'
               }}
             >
-              Our mission is to make code sharing simple
+              {t('home.mission')}
             </p>
             
             <p 
@@ -100,7 +102,7 @@ const HomePage = () => {
                 animationFillMode: 'forwards'
               }}
             >
-              We're a team of developers who believe that code collaboration should be easy and accessible to everyone.
+              {t('home.team')}
             </p>
           </div>
         </div>

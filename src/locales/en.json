@@ -1,0 +1,108 @@
+{
+  "language": {
+    "en": "English (US)",
+    "srLatn": "Srpski (Latinica)",
+    "srCyrl": "Српски (Ћирилица)"
+  },
+  "navbar": {
+    "register": "Register",
+    "profile": "Profile",
+    "logout": "Logout",
+    "my_editor": "My Editor",
+    "share_as_guest": "Share as Guest"
+  },
+  "home": {
+    "about_us": "About Us",
+    "features": "Features",
+    "faq": "FAQ",
+    "mission": "Our mission is to make code sharing simple",
+    "team": "We're a team of developers who believe that code collaboration should be easy and accessible to everyone.",
+    "hero_title1": "Code Together.",
+    "hero_title2": "Share Seamlessly.",
+    "hero_desc": "A modern platform for developers to create, share, and collaborate on code snippets in real-time.",
+    "start_coding": "Start Coding",
+    "features_subtitle": "Everything you need for code sharing",
+    "features_desc": "Our platform provides all the tools you need to collaborate efficiently.",
+    "features_1_title": "Real-time Collaboration",
+    "features_1_desc": "Multiple users can edit code simultaneously with instant updates for everyone.",
+    "features_2_title": "Syntax Highlighting",
+    "features_2_desc": "Support for multiple programming languages with beautiful syntax highlighting.",
+    "features_3_title": "Secure Sharing",
+    "features_3_desc": "Easily share your code snippets through secure links - perfect for quick collaboration.",
+    "features_4_title": "Code Execution",
+    "features_4_desc": "Run your code directly in the browser to see results instantly - perfect for testing and learning."
+  },
+  "editor": {
+    "project_title": "Project Title",
+    "shared_view": "Shared View",
+    "login": "Login",
+    "or": "or",
+    "to_save": "to save your code",
+    "auto_saved": "Auto-saved in real-time",
+    "changes_stored": "Changes stored in browser",
+    "lines": "Lines:",
+    "characters": "Characters:",
+    "language": "Language:"
+  },
+  "modal": {
+    "delete": "Delete",
+    "ok": "OK",
+    "cancel": "Cancel"
+  },
+  "auth": {
+    "name_required": "Name is required",
+    "email_required": "Email is required",
+    "email_invalid": "Email is invalid",
+    "password_required": "Password is required",
+    "password_min": "Password must be at least 6 characters",
+    "passwords_no_match": "Passwords do not match",
+    "login": "Log In",
+    "email": "Email",
+    "password": "Password",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot password?",
+    "signing_in": "Signing In...",
+    "sign_in": "Sign In",
+    "no_account": "Don't have an account?",
+    "register": "Register",
+    "invalid_credentials": "Invalid email or password. Please try again.",
+    "error_occurred": "An error occurred. Please try again."
+  },
+  "create_project": {
+    "project_name": "Project Name",
+    "programming_language": "Programming Language"
+  },
+  "languages": {
+    "javascript": "JavaScript",
+    "python": "Python",
+    "java": "Java",
+    "csharp": "C#",
+    "cpp": "C++",
+    "php": "PHP",
+    "html": "HTML",
+    "css": "CSS"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "q1": "What is ATVSS CodeShare?",
+    "a1": "ATVSS CodeShare is a platform that allows developers to write, save, and share code snippets with others. It supports multiple programming languages and provides syntax highlighting for better readability.",
+    "q2": "Do I need an account to use ATVSS CodeShare?",
+    "a2_1": "You can use the code editor without an account, but you'll need to create an account to save your code snippets and access them later. Creating an account is free and only takes a minute.",
+    "a2_link": "Create an account",
+    "q3": "Which programming languages are supported?",
+    "a3_1": "ATVSS CodeShare currently supports JavaScript, Python, Java, C#, C++, PHP, HTML, and CSS. We're constantly working on adding support for more languages.",
+    "a3_link": "See all features",
+    "q4": "Can I collaborate with others on a code snippet?",
+    "a4_1": "Currently, ATVSS CodeShare allows you to share your code snippets with others via a link. Real-time collaboration features are on our roadmap and will be available in future updates.",
+    "a4_link": "Try the editor",
+    "q5": "Is my code private?",
+    "a5": "You can choose whether your code snippets are public or private. Public snippets can be viewed by anyone with the link, while private snippets are only accessible to you.",
+    "q6": "Is ATVSS CodeShare free to use?",
+    "a6": "Yes, ATVSS CodeShare is completely free to use. We may introduce premium features in the future, but the core functionality will always remain free."
+  },
+  "brand": "ATVSS CodeShare",
+  "footer": {
+    "copyright": "ATVSS CodeShare, Inc. All rights reserved.",
+    "github": "GitHub"
+  }
+} 

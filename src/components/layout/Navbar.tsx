@@ -3,8 +3,9 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
-import { useLanguage } from '../../contexts/LanguageContext';
 import { handleCtrlClickNavigation } from '../../utils/navigation';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,7 +13,7 @@ const Navbar = () => {
   const { openModal } = useModal();
   const { isAuthenticated, logout } = useAuth();
   const { hasActiveWorkspace, clearWorkspace } = useWorkspace();
-  const { currentLanguage, setLanguage } = useLanguage();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const pendingScrollRef = useRef<string | null>(null);
@@ -84,14 +85,20 @@ const Navbar = () => {
     }
   };
 
+  const currentLanguage = i18n.language;
+  const setLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+    localStorage.setItem('i18nextLng', lng);
+  };
+
   const getLanguageLabel = (lang: string) => {
     switch (lang) {
       case 'en-US':
-        return 'English (US)';
+        return t('language.en');
       case 'sr-Latn':
-        return 'Serbian (Latin)';
+        return t('language.srLatn');
       case 'sr-Cyrl':
-        return 'Serbian (Cyrillic)';
+        return t('language.srCyrl');
       default:
         return lang;
     }
@@ -107,26 +114,26 @@ const Navbar = () => {
               className="text-white font-bold text-xl mr-8"
               onClick={handleLogoClick}
             >
-              CodeShare
+              {t('brand')}
             </Link>
             <div className="hidden md:flex items-center">
               <button 
                 onClick={e => handleCtrlClickNavigation(e, '/#features', navigate)}
                 className="text-gray-300 hover:text-white hover:border-gray-800 bg-gray-800 px-3 py-2 rounded-md text-sm font-medium mr-6"
               >
-                Features
+                {t('home.features')}
               </button>
               <button 
                 onClick={e => handleCtrlClickNavigation(e, '/#about', navigate)}
                 className="text-gray-300 hover:text-white hover:border-gray-800 bg-gray-800 px-3 py-2 rounded-md text-sm font-medium mr-6"
               >
-                About
+                {t('home.about_us')}
               </button>
               <button 
                 onClick={e => handleCtrlClickNavigation(e, '/#faq', navigate)}
                 className="text-gray-300 hover:text-white hover:border-gray-800 bg-gray-800 px-3 py-2 rounded-md text-sm font-medium mr-6"
               >
-                FAQ
+                {t('home.faq')}
               </button>
             </div>
           </div>
@@ -168,7 +175,7 @@ const Navbar = () => {
                       className={`group flex items-center w-full px-4 py-2 text-sm text-gray-900 !bg-white ${currentLanguage === 'en-US' ? '!bg-gray-100' : ''} hover:!bg-gray-100`}
                       role="menuitem"
                     >
-                      English (US)
+                      {t('language.en')}
                     </button>
                     <button
                       onClick={() => {
@@ -178,7 +185,7 @@ const Navbar = () => {
                       className={`group flex items-center w-full px-4 py-2 text-sm text-gray-900 !bg-white ${currentLanguage === 'sr-Latn' ? '!bg-gray-100' : ''} hover:!bg-gray-100`}
                       role="menuitem"
                     >
-                      Srpski (Latinica)
+                      {t('language.srLatn')}
                     </button>
                     <button
                       onClick={() => {
@@ -188,7 +195,7 @@ const Navbar = () => {
                       className={`group flex items-center w-full px-4 py-2 text-sm text-gray-900 !bg-white ${currentLanguage === 'sr-Cyrl' ? '!bg-gray-100' : ''} hover:!bg-gray-100`}
                       role="menuitem"
                     >
-                      Српски (Ћирилица)
+                      {t('language.srCyrl')}
                     </button>
                   </div>
                 </div>
@@ -201,14 +208,14 @@ const Navbar = () => {
                   to="/profile"
                   className="text-gray-300 hover:text-white bg-gray-800 px-3 py-2 rounded-md text-sm font-medium"
                 >
-                  Profile
+                  {t('navbar.profile')}
                 </Link>
                 <span className="text-gray-300 text-sm font-medium">|</span>
                 <button 
                   onClick={handleLogout}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
                 >
-                  Logout
+                  {t('navbar.logout')}
                 </button>
               </>
             ) : (
@@ -218,27 +225,27 @@ const Navbar = () => {
                     to="/editor"
                     className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-sm font-medium mr-4"
                   >
-                    My Editor
+                    {t('navbar.my_editor')}
                   </Link>
                 ) : (
                   <Link 
                     to="/editor"
                     className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-sm font-medium mr-4"
                   >
-                    Share as Guest
+                    {t('navbar.share_as_guest')}
                   </Link>
                 )}
                 <button 
                   onClick={() => openModal('login')}
                   className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
                 >
-                  Login
+                  {t('editor.login')}
                 </button>
                 <button 
                   onClick={() => openModal('register')}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
                 >
-                  Register
+                  {t('navbar.register')}
                 </button>
               </>
             )}
@@ -291,19 +298,19 @@ const Navbar = () => {
               onClick={e => handleCtrlClickNavigation(e, '/#features', navigate)}
               className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
             >
-              Features
+              {t('home.features')}
             </button>
             <button 
               onClick={e => handleCtrlClickNavigation(e, '/#about', navigate)}
               className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
             >
-              About
+              {t('home.about_us')}
             </button>
             <button 
               onClick={e => handleCtrlClickNavigation(e, '/#faq', navigate)}
               className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
             >
-              FAQ
+              {t('home.faq')}
             </button>
           </div>
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-700">
@@ -313,13 +320,13 @@ const Navbar = () => {
                   to="/profile"
                   className="text-gray-300 hover:text-white bg-gray-800 px-3 py-2 rounded-md text-base font-medium w-full text-left"
                 >
-                  Profile
+                  {t('navbar.profile')}
                 </Link>
                 <button 
                   onClick={handleLogout}
                   className="bg-blue-600 hover:bg-blue-700 text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
                 >
-                  Logout
+                  {t('navbar.logout')}
                 </button>
               </>
             ) : (
@@ -329,14 +336,14 @@ const Navbar = () => {
                     to="/editor"
                     className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-base font-medium w-full text-left"
                   >
-                    My Editor
+                    {t('navbar.my_editor')}
                   </Link>
                 ) : (
                   <Link 
                     to="/editor"
                     className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-base font-medium w-full text-left"
                   >
-                    Share as Guest
+                    {t('navbar.share_as_guest')}
                   </Link>
                 )}
                 <button 
@@ -346,7 +353,7 @@ const Navbar = () => {
                   }}
                   className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
                 >
-                  Login
+                  {t('editor.login')}
                 </button>
                 <button 
                   onClick={() => {
@@ -355,7 +362,7 @@ const Navbar = () => {
                   }}
                   className="bg-blue-600 hover:bg-blue-700 text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
                 >
-                  Register
+                  {t('navbar.register')}
                 </button>
               </>
             )}
@@ -374,7 +381,7 @@ const Navbar = () => {
               }}
               className={`group flex items-center w-full px-4 py-2 text-base text-gray-900 !bg-white ${currentLanguage === 'en-US' ? '!bg-gray-100' : ''} hover:!bg-gray-100`}
             >
-              English (US)
+              {t('language.en')}
             </button>
             <button
               onClick={() => {
@@ -383,7 +390,7 @@ const Navbar = () => {
               }}
               className={`group flex items-center w-full px-4 py-2 text-base text-gray-900 !bg-white ${currentLanguage === 'sr-Latn' ? '!bg-gray-100' : ''} hover:!bg-gray-100`}
             >
-              Serbian (Latin)
+              {t('language.srLatn')}
             </button>
             <button
               onClick={() => {
@@ -392,7 +399,7 @@ const Navbar = () => {
               }}
               className={`group flex items-center w-full px-4 py-2 text-base text-gray-900 !bg-white ${currentLanguage === 'sr-Cyrl' ? '!bg-gray-100' : ''} hover:!bg-gray-100`}
             >
-              Serbian (Cyrillic)
+              {t('language.srCyrl')}
             </button>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useModal } from '../../contexts/ModalContext';
 import React from 'react';
 import { handleCtrlClickNavigation } from '../../utils/navigation';
+import { useTranslation } from 'react-i18next';
 
 type FAQItemProps = {
   question: string;
@@ -61,6 +62,7 @@ const FAQ = () => {
   const [animate, setAnimate] = useState(false);
   const { openModal } = useModal();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   // Start animation when component is visible in viewport
   useEffect(() => {
@@ -85,84 +87,74 @@ const FAQ = () => {
   
   const faqItems = [
     {
-      question: "What is CodeShare?",
-      answer: (
-        <>
-          CodeShare is a platform that allows developers to write, save, and share code snippets with others. It supports multiple programming languages and provides syntax highlighting for better readability.
-        </>
-      ),
+      question: t('faq.q1'),
+      answer: t('faq.a1'),
     },
     {
-      question: "Do I need an account to use CodeShare?",
-      answer: (
-        <>
-          You can use the code editor without an account, but you'll need to create an account to save your code snippets and access them later. Creating an account is free and only takes a minute.
-          <br />
-          <span
-            className="text-blue-600 underline hover:text-blue-800 cursor-pointer font-bold"
-            onClick={() => openModal('register')}
-            role="button"
-            tabIndex={0}
-            onKeyPress={e => { if (e.key === 'Enter' || e.key === ' ') openModal('register'); }}
-          >
-            Create an account
-          </span>
-        </>
-      ),
+      question: t('faq.q2'),
+      answer: <>
+        {t('faq.a2_1')}
+        <br />
+        <span
+          className="text-blue-600 underline hover:text-blue-800 cursor-pointer font-bold"
+          onClick={() => openModal('register')}
+          role="button"
+          tabIndex={0}
+          onKeyPress={e => { if (e.key === 'Enter' || e.key === ' ') openModal('register'); }}
+        >
+          {t('faq.a2_link')}
+        </span>
+      </>,
     },
     {
-      question: "Which programming languages are supported?",
-      answer: (
-        <>
-          CodeShare currently supports JavaScript, Python, Java, C#, C++, PHP, HTML, and CSS. We're constantly working on adding support for more languages.
-          <br />
-          <span
-            className="text-blue-600 underline hover:text-blue-800 cursor-pointer font-bold"
-            role="button"
-            tabIndex={0}
-            onClick={() => {
+      question: t('faq.q3'),
+      answer: <>
+        {t('faq.a3_1')}
+        <br />
+        <span
+          className="text-blue-600 underline hover:text-blue-800 cursor-pointer font-bold"
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            const el = document.getElementById('features');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+          onKeyPress={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
               const el = document.getElementById('features');
-              if (el) {
-                el.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-            onKeyPress={e => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                const el = document.getElementById('features');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-          >
-            See all features
-          </span>
-        </>
-      ),
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+        >
+          {t('faq.a3_link')}
+        </span>
+      </>,
     },
     {
-      question: "Can I collaborate with others on a code snippet?",
-      answer: (
-        <>
-          Currently, CodeShare allows you to share your code snippets with others via a link. Real-time collaboration features are on our roadmap and will be available in future updates.
-          <br />
-          <span
-            className="text-blue-600 underline hover:text-blue-800 cursor-pointer font-bold"
-            role="button"
-            tabIndex={0}
-            onClick={e => handleCtrlClickNavigation(e, '/editor', navigate)}
-            onKeyPress={e => { if (e.key === 'Enter' || e.key === ' ') navigate('/editor'); }}
-          >
-            Try the editor
-          </span>
-        </>
-      ),
+      question: t('faq.q4'),
+      answer: <>
+        {t('faq.a4_1')}
+        <br />
+        <span
+          className="text-blue-600 underline hover:text-blue-800 cursor-pointer font-bold"
+          role="button"
+          tabIndex={0}
+          onClick={e => handleCtrlClickNavigation(e, '/editor', navigate)}
+          onKeyPress={e => { if (e.key === 'Enter' || e.key === ' ') navigate('/editor'); }}
+        >
+          {t('faq.a4_link')}
+        </span>
+      </>,
     },
     {
-      question: "Is my code private?",
-      answer: "You can choose whether your code snippets are public or private. Public snippets can be viewed by anyone with the link, while private snippets are only accessible to you.",
+      question: t('faq.q5'),
+      answer: t('faq.a5'),
     },
     {
-      question: "Is CodeShare free to use?",
-      answer: "Yes, CodeShare is completely free to use. We may introduce premium features in the future, but the core functionality will always remain free.",
+      question: t('faq.q6'),
+      answer: t('faq.a6'),
     },
   ];
 
@@ -184,7 +176,7 @@ const FAQ = () => {
               animationFillMode: 'forwards'
             }}
           >
-            FAQ
+            {t('home.faq')}
           </h2>
           
           <p 
@@ -197,7 +189,7 @@ const FAQ = () => {
               animationFillMode: 'forwards'
             }}
           >
-            Frequently Asked Questions
+            {t('faq.title')}
           </p>
           
           <p 
