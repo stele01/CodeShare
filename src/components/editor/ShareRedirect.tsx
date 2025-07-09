@@ -59,9 +59,13 @@ const ShareRedirect = () => {
         // Store the workspace ID instead of redirecting
         setWorkspaceId(data.workspaceId);
         setIsLoading(false);
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error resolving share link:', error);
-        setError(error.message || 'Failed to load the shared workspace');
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError('Failed to load the shared workspace');
+        }
         setShowErrorDialog(true);
         setIsLoading(false);
         

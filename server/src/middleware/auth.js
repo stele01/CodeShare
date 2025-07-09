@@ -14,7 +14,11 @@ const protect = async (req, res, next) => {
       console.log(`Auth middleware: Token received for path ${req.path}`);
 
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+        issuer: 'codeshare-app',
+        audience: 'codeshare-users',
+        algorithms: ['HS256']
+      });
       console.log(`Auth middleware: Token verified, user ID: ${decoded.id}`);
 
       // Find user by id and exclude password
@@ -48,7 +52,11 @@ const optionalAuth = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+        issuer: 'codeshare-app',
+        audience: 'codeshare-users',
+        algorithms: ['HS256']
+      });
 
       // Find user by id and exclude password
       req.user = await User.findById(decoded.id).select('-password');

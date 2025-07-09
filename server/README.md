@@ -15,11 +15,45 @@ Backend API for the CodeShare application, allowing users to save and share code
    MONGODB_URI=mongodb://localhost:27017/codeshare
    JWT_SECRET=your_super_secure_secret_key
    JWT_EXPIRATION=7d
+   NODE_ENV=development
    ```
 
 3. Start the server:
    - Development mode: `npm run dev`
    - Production mode: `npm start`
+
+## Security Features
+
+### Authentication & Authorization
+- JWT-based authentication with configurable expiration
+- Password hashing using bcrypt with salt factor 10
+- Protected routes using middleware
+- Optional authentication for public endpoints
+
+### Rate Limiting
+- General rate limiting: 100 requests per 15 minutes per IP
+- Stricter auth rate limiting: 5 attempts per 15 minutes per IP
+- Prevents brute force attacks and API abuse
+
+### Input Validation & Sanitization
+- Email validation and normalization
+- Input sanitization using validator library
+- Request body size limiting (10MB)
+- Mongoose schema validation
+
+### Security Headers
+- Helmet.js for security headers
+- CORS configuration with domain restrictions
+- Content Security Policy headers
+
+### Production Security Checklist
+- [ ] Generate strong JWT secret (64+ characters)
+- [ ] Update CORS origins to your actual domain
+- [ ] Set NODE_ENV=production
+- [ ] Use HTTPS in production
+- [ ] Configure proper MongoDB authentication
+- [ ] Set up proper logging and monitoring
+- [ ] Regular security updates for dependencies
 
 ## API Endpoints
 
@@ -28,6 +62,7 @@ Backend API for the CodeShare application, allowing users to save and share code
 - `POST /api/auth/register` - Register a new user
 - `POST /api/auth/login` - Login a user
 - `GET /api/auth/profile` - Get user profile (protected)
+- `PUT /api/auth/password` - Update user password (protected)
 
 ### Workspaces
 

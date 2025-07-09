@@ -2,8 +2,9 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 
 interface User {
   _id: string;
-  name: string;
+  fullName: string;
   email: string;
+  avatarUrl?: string;
   token?: string;
 }
 
@@ -13,7 +14,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  register: (fullName: string, email: string, password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,7 +30,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     if (token && savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        // For backwards compatibility with old user objects in localStorage
+        if (parsedUser.name && !parsedUser.fullName) {
+          parsedUser.fullName = parsedUser.name;
+          delete parsedUser.name;
+        }
+        setUser(parsedUser);
       } catch (error) {
         console.error('Failed to parse saved user data');
         localStorage.removeItem('user');
@@ -63,7 +70,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Save user data without token
       const userToSave = {
         _id: userData._id,
-        name: userData.name,
+        fullName: userData.fullName || userData.name,
         email: userData.email
       };
       
@@ -78,14 +85,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Real register functionality that calls the API
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
+  const register = async (fullName: string, email: string, password: string): Promise<boolean> => {
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ fullName, email, password })
       });
       
       if (!response.ok) {

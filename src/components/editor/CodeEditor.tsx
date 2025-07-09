@@ -836,7 +836,7 @@ const CodeEditor = ({ sharedWorkspaceId, isSharedView = false }: CodeEditorProps
                     style={{
                       fontFamily: 'monospace',
                       fontSize: '14px',
-                      minHeight: '60vh',
+                      minHeight: '68vh',
                       backgroundColor: '#1e1e1e',
                       color: '#d4d4d4',
                       width: '100%',

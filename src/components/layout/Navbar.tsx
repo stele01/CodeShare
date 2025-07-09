@@ -10,15 +10,17 @@ import i18n from '../../i18n';
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { openModal } = useModal();
-  const { isAuthenticated, logout } = useAuth();
-  const { hasActiveWorkspace, clearWorkspace } = useWorkspace();
+  const { isAuthenticated, user, logout } = useAuth();
+  const { clearWorkspace } = useWorkspace();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const pendingScrollRef = useRef<string | null>(null);
   const homeNavRef = useRef<boolean>(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   
   // Handle scrolling after navigation
   useEffect(() => {
@@ -50,11 +52,14 @@ const Navbar = () => {
     }
   }, [location]);
 
-  // Close language menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
         setIsLangMenuOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
       }
     };
 
@@ -202,53 +207,98 @@ const Navbar = () => {
               )}
             </div>
 
-            {isAuthenticated ? (
-              <>
-                <Link 
-                  to="/profile"
-                  className="text-gray-300 hover:text-white bg-gray-800 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  {t('navbar.profile')}
-                </Link>
-                <span className="text-gray-300 text-sm font-medium">|</span>
-                <button 
-                  onClick={handleLogout}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                >
-                  {t('navbar.logout')}
-                </button>
-              </>
-            ) : (
-              <>
-                {hasActiveWorkspace ? (
-                  <Link 
-                    to="/editor"
-                    className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-sm font-medium mr-4"
-                  >
-                    {t('navbar.my_editor')}
-                  </Link>
+            {/* NEW - Unified User Menu */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
+                aria-haspopup="true"
+                aria-expanded={isUserMenuOpen}
+              >
+                <span className="sr-only">Open user menu</span>
+                {isAuthenticated && user ? (
+                  <img
+                    className="h-8 w-8 rounded-full bg-gray-700"
+                    src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.fullName}&background=0D8ABC&color=fff`}
+                    alt="User avatar"
+                  />
                 ) : (
-                  <Link 
-                    to="/editor"
-                    className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-sm font-medium mr-4"
-                  >
-                    {t('navbar.share_as_guest')}
-                  </Link>
+                  <div className="h-8 w-8 rounded-full bg-gray-700 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
                 )}
-                <button 
-                  onClick={() => openModal('login')}
-                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+              </button>
+
+              {isUserMenuOpen && (
+                <div 
+                  className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="user-menu-button"
                 >
-                  {t('editor.login')}
-                </button>
-                <button 
-                  onClick={() => openModal('register')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                >
-                  {t('navbar.register')}
-                </button>
-              </>
-            )}
+                  {isAuthenticated && user ? (
+                    <>
+                      <div className="px-4 py-3">
+                        <p className="text-sm text-gray-900 font-semibold">{user.fullName}</p>
+                        <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                      </div>
+                      <div className="border-t border-gray-100" />
+                      <Link
+                        to="/my-projects"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        My Projects
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        {t('navbar.settings')}
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                      >
+                        {t('navbar.logout')}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          openModal('login');
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                      >
+                        {t('editor.login')}
+                      </button>
+                      <button
+                        onClick={() => {
+                          openModal('register');
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                      >
+                        {t('navbar.register')}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="md:hidden flex items-center">
@@ -314,57 +364,69 @@ const Navbar = () => {
             </button>
           </div>
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-700">
-            {isAuthenticated ? (
-              <>
-                <Link 
-                  to="/profile"
-                  className="text-gray-300 hover:text-white bg-gray-800 px-3 py-2 rounded-md text-base font-medium w-full text-left"
-                >
-                  {t('navbar.profile')}
-                </Link>
-                <button 
-                  onClick={handleLogout}
-                  className="bg-blue-600 hover:bg-blue-700 text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
-                >
-                  {t('navbar.logout')}
-                </button>
-              </>
+            {/* NEW - Mobile User Info/Actions */}
+            {isAuthenticated && user ? (
+              <div className="pt-4 pb-3 border-t border-gray-700">
+                <div className="flex items-center px-5">
+                  <div className="flex-shrink-0">
+                    <img
+                      className="h-10 w-10 rounded-full"
+                      src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.fullName}&background=0D8ABC&color=fff`}
+                      alt="User avatar"
+                    />
+                  </div>
+                  <div className="ml-3">
+                    <div className="text-base font-medium leading-none text-white">{user.fullName}</div>
+                    <div className="text-sm font-medium leading-none text-gray-400">{user.email}</div>
+                  </div>
+                </div>
+                <div className="mt-3 px-2 space-y-1">
+                  <Link
+                    to="/my-projects"
+                    className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    My Projects
+                  </Link>
+                  <Link
+                    to="/settings"
+                    className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t('navbar.settings')}
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="block w-full text-left rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
+                  >
+                    {t('navbar.logout')}
+                  </button>
+                </div>
+              </div>
             ) : (
-              <>
-                {hasActiveWorkspace ? (
-                  <Link 
-                    to="/editor"
-                    className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-base font-medium w-full text-left"
-                  >
-                    {t('navbar.my_editor')}
-                  </Link>
-                ) : (
-                  <Link 
-                    to="/editor"
-                    className="bg-purple-600 hover:bg-purple-700 hover:text-white text-white px-4 py-2 rounded-md text-base font-medium w-full text-left"
-                  >
-                    {t('navbar.share_as_guest')}
-                  </Link>
-                )}
-                <button 
+              <div className="pt-2 pb-3 space-y-1">
+                <button
                   onClick={() => {
                     openModal('login');
                     setIsMenuOpen(false);
                   }}
-                  className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
+                  className="block w-full text-left rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
                 >
                   {t('editor.login')}
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     openModal('register');
                     setIsMenuOpen(false);
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left"
+                  className="block w-full text-left rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
                 >
                   {t('navbar.register')}
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
