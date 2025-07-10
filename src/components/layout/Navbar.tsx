@@ -6,6 +6,8 @@ import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { handleCtrlClickNavigation } from '../../utils/navigation';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
+import LogoAkademijaNis from '../../assets/logos/Logo akademija niš.svg';
+import AppsTeamHorizontal from '../../assets/logos/apps-team-horizontal-01 white.png';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -114,12 +116,18 @@ const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
+            {/* Levo: SVG logo */}
+            <a href="https://odseknis.akademijanis.edu.rs/" target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center mr-6">
+              <img src={LogoAkademijaNis} alt="Logo Akademija Niš" className="h-10 w-auto" />
+            </a>
+            {/* Brand tekst (uvek pored SVG-a na desktopu, samostalno na mobilu) */}
             <Link 
               to="/" 
-              className="text-white font-bold text-xl mr-8"
+              className="text-white font-bold text-xl mr-8 flex items-center"
               onClick={handleLogoClick}
             >
-              {t('brand')}
+              <span className="hidden md:inline">{t('brand')}</span>
+              <span className="md:hidden">{t('brand')}</span>
             </Link>
             <div className="hidden md:flex items-center">
               <button 
@@ -143,6 +151,7 @@ const Navbar = () => {
             </div>
           </div>
           
+          {/* Desno: PNG logo */}
           <div className="hidden md:flex items-center space-x-4">
             {/* Language Switcher */}
             <div className="relative" ref={langMenuRef}>
@@ -299,6 +308,10 @@ const Navbar = () => {
                 </div>
               )}
             </div>
+            {/* Skroz desno logo */}
+            <a href="https://odseknis.akademijanis.edu.rs/vtsapps-team-rkts/" target="_blank" rel="noopener noreferrer" className="ml-6">
+              <img src={AppsTeamHorizontal} alt="Apps Team Logo" className="h-10 w-auto" />
+            </a>
           </div>
           
           <div className="md:hidden flex items-center">

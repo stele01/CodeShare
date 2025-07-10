@@ -9,7 +9,8 @@
     "profile": "Profile",
     "logout": "Logout",
     "my_editor": "My Editor",
-    "share_as_guest": "Share as Guest"
+    "share_as_guest": "Share as Guest",
+    "settings": "Settings"
   },
   "home": {
     "about_us": "About Us",
@@ -84,6 +85,7 @@
   },
   "faq": {
     "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about CodeShare.",
     "q1": "What is ATVSS CodeShare?",
     "a1": "ATVSS CodeShare is a platform that allows developers to write, save, and share code snippets with others. It supports multiple programming languages and provides syntax highlighting for better readability.",
     "q2": "Do I need an account to use ATVSS CodeShare?",
@@ -139,5 +141,14 @@
     "create_new_project": "Create New Project",
     "actions": "Actions",
     "double_click_hint": "💡 Double-click on any project row to open it quickly"
+  },
+  "settings": {
+    "change_password": "Change Password",
+    "update_your_password": "Update your password below.",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_new_password": "Confirm New Password",
+    "saving": "Saving...",
+    "save_changes": "Save Changes"
   }
 } 

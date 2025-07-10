@@ -202,7 +202,7 @@ const FAQ = () => {
               animationFillMode: 'forwards'
             }}
           >
-            Find answers to common questions about CodeShare.
+            {t('faq.subtitle')}
           </p>
         </div>
         

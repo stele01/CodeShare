@@ -50,8 +50,12 @@ const ChangePassword = () => {
       setNewPassword('');
       setConfirmPassword('');
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to update password. Please try again.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to update password. Please try again.');
+      } else {
+        setError('Failed to update password. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

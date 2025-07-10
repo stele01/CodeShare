@@ -9,7 +9,8 @@
     "profile": "Profil",
     "logout": "Odjavi se",
     "my_editor": "Moj Editor",
-    "share_as_guest": "Podeli kao gost"
+    "share_as_guest": "Podeli kao gost",
+    "settings": "Podešavanja"
   },
   "home": {
     "about_us": "O nama",
@@ -84,21 +85,22 @@
   },
   "faq": {
     "title": "Često postavljana pitanja",
-    "q1": "Šta je ATVSS CodeShare?",
-    "a1": "ATVSS CodeShare je platforma koja omogućava programerima da pišu, sačuvaju i dele kod sa drugima. Podržava više programskih jezika i nudi isticanje sintakse radi bolje preglednosti.",
-    "q2": "Da li mi je potreban nalog za korišćenje ATVSS CodeShare-a?",
+    "subtitle": "Pronađite odgovore na česta pitanja o Delitelju Koda.",
+    "q1": "Šta je ATVSS Delitelj Koda?",
+    "a1": "ATVSS Delitelj Koda je platforma koja omogućava programerima da pišu, sačuvaju i dele kod sa drugima. Podržava više programskih jezika i nudi isticanje sintakse radi bolje preglednosti.",
+    "q2": "Da li mi je potreban nalog za korišćenje ATVSS Delitelj Koda?",
     "a2_1": "Možete koristiti editor bez naloga, ali je potrebno da napravite nalog kako biste sačuvali kod i pristupili mu kasnije. Kreiranje naloga je besplatno i traje samo minut.",
     "a2_link": "Napravi nalog",
     "q3": "Koji programski jezici su podržani?",
-    "a3_1": "ATVSS CodeShare trenutno podržava JavaScript, Python, Java, C#, C++, PHP, HTML i CSS. Konstantno radimo na dodavanju podrške za još jezika.",
+    "a3_1": "ATVSS Delitelj Koda trenutno podržava JavaScript, Python, Java, C#, C++, PHP, HTML i CSS. Konstantno radimo na dodavanju podrške za još jezika.",
     "a3_link": "Pogledaj sve funkcionalnosti",
     "q4": "Mogu li da sarađujem sa drugima na kodu?",
-    "a4_1": "Trenutno, ATVSS CodeShare omogućava deljenje koda putem linka. Saradnja u realnom vremenu je na našem planu i biće dostupna u budućim verzijama.",
+    "a4_1": "Trenutno, ATVSS Delitelj Koda omogućava deljenje koda putem linka. Saradnja u realnom vremenu je na našem planu i biće dostupna u budućim verzijama.",
     "a4_link": "Probaj editor",
     "q5": "Da li je moj kod privatan?",
     "a5": "Možete izabrati da li će vaš kod biti javan ili privatan. Javni kod je dostupan svima sa linkom, dok je privatan dostupan samo vama.",
-    "q6": "Da li je ATVSS CodeShare besplatan?",
-    "a6": "Da, ATVSS CodeShare je potpuno besplatan za korišćenje. Možda ćemo u budućnosti uvesti premium opcije, ali osnovne funkcionalnosti će uvek biti besplatne."
+    "q6": "Da li je ATVSS Delitelj Koda besplatan?",
+    "a6": "Da, ATVSS Delitelj Koda je potpuno besplatan za korišćenje. Možda ćemo u budućnosti uvesti premium opcije, ali osnovne funkcionalnosti će uvek biti besplatne."
   },
   "brand": "ATVSS DeliteljKoda",
   "footer": {
@@ -139,5 +141,14 @@
     "create_new_project": "Napravi novi projekat",
     "actions": "Akcije",
     "double_click_hint": "💡 Duplo kliknite na bilo koji red projekta da ga brzo otvorite"
+  },
+  "settings": {
+    "change_password": "Promena lozinke",
+    "update_your_password": "Ažurirajte vašu lozinku ispod.",
+    "current_password": "Trenutna lozinka",
+    "new_password": "Nova lozinka",
+    "confirm_new_password": "Potvrdite novu lozinku",
+    "saving": "Čuvanje...",
+    "save_changes": "Sačuvaj izmene"
   }
 } 

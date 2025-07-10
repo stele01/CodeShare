@@ -31,6 +31,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (token && savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
+        parsedUser.token = token;
         // For backwards compatibility with old user objects in localStorage
         if (parsedUser.name && !parsedUser.fullName) {
           parsedUser.fullName = parsedUser.name;
@@ -71,9 +72,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const userToSave = {
         _id: userData._id,
         fullName: userData.fullName || userData.name,
-        email: userData.email
+        email: userData.email,
+        token: userData.token
       };
-      
       setUser(userToSave);
       localStorage.setItem('user', JSON.stringify(userToSave));
       

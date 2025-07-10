@@ -133,7 +133,7 @@ const MyProjects = () => {
   };
 
   // Function to handle single click on project row (for visual feedback)
-  const handleRowClick = (e: React.MouseEvent, workspaceId: string) => {
+  const handleRowClick = (e: React.MouseEvent) => {
     // Don't trigger if clicking on buttons or links
     if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
       return;
@@ -389,7 +389,7 @@ const MyProjects = () => {
                         <tr 
                           key={workspace._id} 
                           className="hover:bg-gray-50 hover:shadow-sm cursor-pointer transition-all duration-150 ease-in-out group"
-                          onClick={(e) => handleRowClick(e, workspace._id)}
+                          onClick={(e) => handleRowClick(e)}
                           onDoubleClick={() => handleRowDoubleClick(workspace._id)}
                           onKeyDown={(e) => handleRowKeyDown(e, workspace._id)}
                           tabIndex={0}

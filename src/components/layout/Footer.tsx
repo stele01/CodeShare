@@ -1,10 +1,21 @@
 import { useTranslation } from 'react-i18next';
+import LogoAkademijaNis from '../../assets/logos/Logo akademija niš.svg';
+import AppsTeamHorizontal from '../../assets/logos/apps-team-horizontal-01 white.png';
 
 const Footer = () => {
   const { t } = useTranslation();
   return (
     <footer className="bg-gray-800 text-white w-full">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Logoi iznad linije, levo */}
+        <div className="flex items-center space-x-6 mb-2">
+          <a href="https://odseknis.akademijanis.edu.rs/" target="_blank" rel="noopener noreferrer">
+            <img src={LogoAkademijaNis} alt="Logo Akademija Niš" className="h-10 w-auto" />
+          </a>
+          <a href="https://odseknis.akademijanis.edu.rs/vtsapps-team-rkts/" target="_blank" rel="noopener noreferrer">
+            <img src={AppsTeamHorizontal} alt="Apps Team Logo" className="h-10 w-auto" />
+          </a>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         </div>
         
